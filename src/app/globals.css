@@ -318,6 +318,15 @@ body {
   .nav-rail { display: none !important; }
   .mobile-nav { display: flex !important; }
   .main-content { margin-left: 0 !important; }
+
+  /* Horizontal scroll for tables on mobile */
+  .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* Tighter card padding on mobile */
+  .card { border-radius: 8px; }
+
+  /* Stack stat cards at full width */
+  h1 { font-size: 1.125rem; }
 }
 
 @media (min-width: 769px) {

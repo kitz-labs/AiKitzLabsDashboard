@@ -22,6 +22,12 @@ export const metadata: Metadata = {
   description: "Builderz Marketing Engine Control Center",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover" as const,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
