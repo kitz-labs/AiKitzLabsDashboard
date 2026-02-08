@@ -1,0 +1,223 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { DataTable } from '@/components/ui/data-table';
+import { Badge } from '@/components/ui/badge';
+import { FunnelChart } from '@/components/ui/funnel-chart';
+import { ApprovalCard } from '@/components/ui/approval-card';
+import { formatDateTime } from '@/lib/utils';
+import type { Lead, Sequence, FunnelStep, Suppression } from '@/types';
+
+type Tab = 'pipeline' | 'leads' | 'sequences' | 'approvals' | 'suppression';
+
+export default function OutreachPage() {
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [funnel, setFunnel] = useState<FunnelStep[]>([]);
+  const [sequences, setSequences] = useState<Sequence[]>([]);
+  const [pendingApprovals, setPendingApprovals] = useState<Sequence[]>([]);
+  const [suppression, setSuppression] = useState<Suppression[]>([]);
+  const [tab, setTab] = useState<Tab>('pipeline');
+  const [tierFilter, setTierFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const load = useCallback(() => {
+    fetch('/api/outreach').then(r => r.json()).then(data => {
+      setLeads(data.leads || []);
+      setFunnel(data.funnel || []);
+      setPendingApprovals(data.pendingApprovals || []);
+    }).catch(() => {});
+    fetch('/api/sequences').then(r => r.json()).then(setSequences).catch(() => {});
+    fetch('/api/suppression').then(r => r.json()).then(setSuppression).catch(() => {});
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const updateLeadStatus = async (id: string, status: string) => {
+    await fetch('/api/leads', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    load();
+  };
+
+  const updateSequenceStatus = async (id: string, status: string) => {
+    await fetch('/api/sequences', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    });
+    load();
+  };
+
+  const filteredLeads = leads.filter(l => {
+    if (tierFilter && l.tier !== tierFilter) return false;
+    if (statusFilter && l.status !== statusFilter) return false;
+    return true;
+  });
+
+  return (
+    <div className="space-y-6 animate-in">
+      <h1 className="text-xl font-semibold">Outreach</h1>
+
+      <div className="flex gap-0 border-b border-border overflow-x-auto">
+        {([
+          { key: 'pipeline' as Tab, label: 'Pipeline' },
+          { key: 'leads' as Tab, label: `Leads (${leads.length})` },
+          { key: 'sequences' as Tab, label: `Sequences (${sequences.length})` },
+          { key: 'approvals' as Tab, label: `Approvals (${pendingApprovals.length})` },
+          { key: 'suppression' as Tab, label: `Suppression (${suppression.length})` },
+        ]).map(t => (
+          <button
+            key={t.key}
+            className={`tab ${tab === t.key ? 'active' : ''}`}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'pipeline' && (
+        <div className="card p-6">
+          <h3 className="text-sm font-medium text-muted-foreground mb-4">Lead Funnel</h3>
+          <FunnelChart steps={funnel} />
+        </div>
+      )}
+
+      {tab === 'leads' && (
+        <>
+          <div className="flex gap-3">
+            <select
+              className="bg-muted border border-border rounded-lg px-3 py-1.5 text-sm"
+              value={tierFilter}
+              onChange={e => setTierFilter(e.target.value)}
+            >
+              <option value="">All Tiers</option>
+              <option value="A">Tier A</option>
+              <option value="B">Tier B</option>
+              <option value="C">Tier C</option>
+            </select>
+            <select
+              className="bg-muted border border-border rounded-lg px-3 py-1.5 text-sm"
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              {['new', 'validated', 'contacted', 'replied', 'interested', 'booked', 'qualified'].map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          </div>
+          <div className="card overflow-hidden">
+            <DataTable
+              columns={[
+                { key: 'first_name', label: 'Name', render: (r: Lead) => (
+                  <span className="font-medium text-sm">{r.first_name} {r.last_name}</span>
+                )},
+                { key: 'company', label: 'Company' },
+                { key: 'title', label: 'Title', render: (r: Lead) => (
+                  <span className="text-xs text-muted-foreground">{r.title}</span>
+                )},
+                { key: 'tier', label: 'Tier', render: (r: Lead) => r.tier ? (
+                  <span className={`badge ${r.tier === 'A' ? 'bg-emerald-900/60 text-emerald-300' : r.tier === 'B' ? 'bg-blue-900/60 text-blue-300' : 'bg-zinc-700 text-zinc-300'}`}>
+                    {r.tier}
+                  </span>
+                ) : <span>—</span> },
+                { key: 'status', label: 'Status', render: (r: Lead) => (
+                  <select
+                    className="bg-muted/50 border border-border rounded px-2 py-0.5 text-xs"
+                    value={r.status}
+                    onChange={e => updateLeadStatus(r.id, e.target.value)}
+                  >
+                    {['new', 'validated', 'contacted', 'replied', 'interested', 'booked', 'qualified', 'disqualified'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                )},
+                { key: 'score', label: 'Score', sortable: true, render: (r: Lead) => (
+                  <span className="font-mono text-xs">{r.score ?? '—'}</span>
+                )},
+                { key: 'source', label: 'Source', render: (r: Lead) => (
+                  <span className="text-xs text-muted-foreground">{r.source || '—'}</span>
+                )},
+                { key: 'last_touch_at', label: 'Last Touch', render: (r: Lead) => (
+                  <span className="text-xs">{formatDateTime(r.last_touch_at)}</span>
+                )},
+              ]}
+              data={filteredLeads}
+              keyField="id"
+              emptyMessage="No leads"
+            />
+          </div>
+        </>
+      )}
+
+      {tab === 'sequences' && (
+        <div className="card overflow-hidden">
+          <DataTable
+            columns={[
+              { key: 'sequence_name', label: 'Sequence' },
+              { key: 'lead_id', label: 'Lead', render: (r: Sequence) => (
+                <span className="font-mono text-xs">{r.lead_id?.slice(0, 8)}</span>
+              )},
+              { key: 'step', label: 'Step' },
+              { key: 'subject', label: 'Subject', render: (r: Sequence) => (
+                <span className="text-sm max-w-xs truncate block">{r.subject || '—'}</span>
+              )},
+              { key: 'status', label: 'Status', render: (r: Sequence) => <Badge status={r.status || 'queued'} /> },
+              { key: 'tier', label: 'Tier' },
+              { key: 'scheduled_for', label: 'Scheduled', render: (r: Sequence) => (
+                <span className="text-xs">{formatDateTime(r.scheduled_for)}</span>
+              )},
+            ]}
+            data={sequences}
+            keyField="id"
+            emptyMessage="No sequences"
+          />
+        </div>
+      )}
+
+      {tab === 'approvals' && (
+        <div className="space-y-3">
+          {pendingApprovals.length === 0 ? (
+            <div className="card p-8 text-center text-muted-foreground text-sm">
+              No email drafts pending approval
+            </div>
+          ) : (
+            pendingApprovals.map(seq => (
+              <ApprovalCard
+                key={seq.id}
+                id={seq.id}
+                title={seq.subject || 'Untitled Email'}
+                subtitle={`Step ${seq.step} — ${seq.sequence_name || 'Unknown Sequence'} — Tier ${seq.tier || '?'}`}
+                body={seq.body || ''}
+                status={seq.status || 'pending_approval'}
+                meta={`Scheduled: ${formatDateTime(seq.scheduled_for)}`}
+                onApprove={(id) => updateSequenceStatus(id, 'approved')}
+                onReject={(id) => updateSequenceStatus(id, 'cancelled')}
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      {tab === 'suppression' && (
+        <div className="card overflow-hidden">
+          <DataTable
+            columns={[
+              { key: 'email', label: 'Email' },
+              { key: 'type', label: 'Type', render: (r: Suppression) => <Badge status={r.type || 'opt_out'} /> },
+              { key: 'added_at', label: 'Added', render: (r: Suppression) => (
+                <span className="text-xs">{formatDateTime(r.added_at)}</span>
+              )},
+            ]}
+            data={suppression}
+            keyField="email"
+            emptyMessage="No suppressed emails"
+          />
+        </div>
+      )}
+    </div>
+  );
+}
