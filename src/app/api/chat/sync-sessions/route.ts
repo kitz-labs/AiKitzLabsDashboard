@@ -129,6 +129,28 @@ export async function POST() {
           });
 
           insertMany(toImport);
+
+          // Create notification for new session messages
+          if (toImport.length > 0) {
+            const agentLabel = agentId.charAt(0).toUpperCase() + agentId.slice(1);
+            const firstUserMsg = toImport.find(e => e.role === 'user');
+            let title = `${agentLabel} session activity`;
+
+            // Try to extract cron job name
+            if (firstUserMsg) {
+              const cronMatch = firstUserMsg.text.match(/\[cron:[\w-]+\s+([^\]]+)\]/);
+              if (cronMatch) title = `${agentLabel}: ${cronMatch[1]}`;
+              else if (firstUserMsg.text.startsWith('[Telegram')) title = `${agentLabel}: Telegram message`;
+            }
+
+            const lastResponse = [...toImport].reverse().find(e => e.role === 'assistant');
+            const preview = lastResponse ? lastResponse.text.slice(0, 120) : `${toImport.length} new messages`;
+
+            db.prepare(`
+              INSERT INTO notifications (type, severity, title, message, data)
+              VALUES ('session', 'info', ?, ?, ?)
+            `).run(title, preview, JSON.stringify({ conversation_id: conversationId, agent_id: agentId, count: toImport.length }));
+          }
         }
 
         // Update sync state

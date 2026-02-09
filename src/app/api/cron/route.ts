@@ -1,11 +1,62 @@
 import { NextResponse } from 'next/server';
+import { getDb } from '@/lib/db';
 import { promises as fs } from 'node:fs';
+import fsSync from 'node:fs';
 import path from 'node:path';
-
-export const dynamic = 'force-dynamic';
 
 const CRON_DIR = '/home/leads/.openclaw/cron';
 const LOGS_DIR = '/home/leads/.openclaw/cron/logs';
+
+/**
+ * POST /api/cron — Check for completed cron jobs and create notifications
+ */
+export async function POST() {
+  try {
+    const db = getDb();
+    const jobsPath = path.join(CRON_DIR, 'jobs.json');
+    if (!fsSync.existsSync(jobsPath)) {
+      return NextResponse.json({ notified: 0 });
+    }
+
+    const data = JSON.parse(fsSync.readFileSync(jobsPath, 'utf-8'));
+    const jobs = data.jobs || [];
+    let notified = 0;
+
+    for (const job of jobs) {
+      if (!job.state?.lastRunAtMs) continue;
+
+      // Check if we already notified for this run
+      const key = `cron:${job.id}:${job.state.lastRunAtMs}`;
+      const existing = db.prepare(
+        "SELECT 1 FROM notifications WHERE data LIKE ? LIMIT 1"
+      ).get(`%${key}%`);
+
+      if (!existing) {
+        const status = job.state.lastStatus === 'ok' ? 'info' : 'warning';
+        const duration = job.state.lastDurationMs ? `${Math.round(job.state.lastDurationMs / 1000)}s` : '';
+        const agentLabel = (job.agentId || 'unknown').charAt(0).toUpperCase() + (job.agentId || 'unknown').slice(1);
+
+        db.prepare(`
+          INSERT INTO notifications (type, severity, title, message, data)
+          VALUES ('cron', ?, ?, ?, ?)
+        `).run(
+          status,
+          `${agentLabel}: ${job.name} completed`,
+          `${job.skill || job.id} finished in ${duration}. Status: ${job.state.lastStatus || 'unknown'}`,
+          JSON.stringify({ key, job_id: job.id, agent_id: job.agentId, duration_ms: job.state.lastDurationMs }),
+        );
+        notified++;
+      }
+    }
+
+    return NextResponse.json({ notified });
+  } catch (error) {
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
+
+export const dynamic = 'force-dynamic';
+
 
 interface CronJob {
   id: string;

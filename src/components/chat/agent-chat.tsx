@@ -34,10 +34,51 @@ function formatDateGroup(ts: number): string {
   return date.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
 }
 
+function parseConversationName(convId: string, lastMessage?: { content: string; from_agent: string } | null): { label: string; sublabel: string; emoji: string } {
+  // Session conversations: "session:{agentId}:{uuid}"
+  if (convId.startsWith('session:')) {
+    const parts = convId.split(':');
+    const agentId = parts[1] || 'unknown';
+    const agent = AGENTS.find(a => a.id === agentId);
+    const emoji = agent?.emoji || '\u{1F916}';
+    const agentName = agent?.name || agentId;
+
+    // Try to extract cron job name from first operator message
+    // Format: [cron:job-id Job Name] ...
+    if (lastMessage?.from_agent === 'operator') {
+      const cronMatch = lastMessage.content.match(/\[cron:[\w-]+\s+([^\]]+)\]/);
+      if (cronMatch) {
+        return { label: `${agentName} \u00b7 ${cronMatch[1]}`, sublabel: 'Cron session', emoji };
+      }
+      // Telegram message
+      if (lastMessage.content.startsWith('[Telegram')) {
+        return { label: `${agentName} \u00b7 Telegram`, sublabel: 'DM session', emoji };
+      }
+    }
+
+    return { label: `${agentName} Session`, sublabel: parts[2]?.slice(0, 8) + '...', emoji };
+  }
+
+  // Cross-agent conversations
+  if (convId === 'hermes_apollo') {
+    return { label: 'Hermes + Apollo', sublabel: 'Team conversation', emoji: '\u{1F91D}' };
+  }
+
+  // Direct agent conversations
+  if (convId.startsWith('agent_')) {
+    const agentId = convId.replace('agent_', '');
+    const agent = AGENTS.find(a => a.id === agentId);
+    return { label: agent?.name || agentId, sublabel: 'Direct chat', emoji: agent?.emoji || '\u{1F916}' };
+  }
+
+  return { label: convId, sublabel: '', emoji: '\u{1F4AC}' };
+}
+
 export function AgentChat() {
   // Sync session transcripts on mount
   useEffect(() => {
     fetch('/api/chat/sync-sessions', { method: 'POST' }).catch(() => {});
+    fetch('/api/cron', { method: 'POST' }).catch(() => {});
   }, []);
 
   const [expanded, setExpanded] = useState(true);
@@ -232,6 +273,7 @@ export function AgentChat() {
                   const isActive = activeConv === conv.id;
                   const agentName = conv.id.replace('agent_', '');
                   const agent = AGENTS.find(a => a.id === agentName);
+                  const parsed = parseConversationName(conv.id, conv.last_message);
                   return (
                     <button
                       key={conv.id}
@@ -242,7 +284,7 @@ export function AgentChat() {
                     >
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-medium truncate">
-                          {agent ? `${agent.emoji} ${agent.name}` : conv.id}
+                          {parsed.emoji} {parsed.label}
                         </span>
                         <div className="flex items-center gap-1 shrink-0 ml-1">
                           {conv.unread_count > 0 && (
@@ -287,18 +329,17 @@ export function AgentChat() {
               <>
                 {/* Conversation header */}
                 <div className="px-4 py-2 border-b border-border/30 flex items-center gap-2 shrink-0">
-                  {activeConv === 'hermes_apollo' ? (
-                    <>
-                      <Users size={14} className="text-muted-foreground" />
-                      <span className="text-sm font-medium">Hermes + Apollo</span>
-                      <span className="text-[10px] text-muted-foreground">Team conversation</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className="text-sm">{AGENTS.find(a => `agent_${a.id}` === activeConv)?.emoji || ''}</span>
-                      <span className="text-sm font-medium">{activeConv.replace('agent_', '')}</span>
-                    </>
-                  )}
+                  {(() => {
+                    const firstOperatorMsg = messages.find(m => m.from_agent === 'operator');
+                    const info = parseConversationName(activeConv, firstOperatorMsg || null);
+                    return (
+                      <>
+                        <span className="text-sm">{info.emoji}</span>
+                        <span className="text-sm font-medium">{info.label}</span>
+                        {info.sublabel && <span className="text-[10px] text-muted-foreground">{info.sublabel}</span>}
+                      </>
+                    );
+                  })()}
                 </div>
 
                 {/* Messages */}
