@@ -8,6 +8,7 @@ import {
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
 import { AgentChat } from '@/components/chat/agent-chat';
+import { CronStatus } from '@/components/cron/cron-status';
 import { timeAgo } from '@/lib/utils';
 import type { AgentRuntime, ActivityEntry } from '@/types';
 import type { AgentDefinition, CronJob, AgentSkill } from '@/lib/agent-config';
@@ -75,6 +76,9 @@ export default function AgentsPage() {
 
       {/* Agent-to-Agent Chat */}
       <AgentChat />
+
+      {/* Cron job status */}
+      <CronStatus />
     </div>
   );
 }
