@@ -207,6 +207,12 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id, created_at);
     CREATE INDEX IF NOT EXISTS idx_messages_agents ON messages(from_agent, to_agent);
 
+    CREATE TABLE IF NOT EXISTS session_sync (
+      session_file TEXT PRIMARY KEY,
+      last_offset INTEGER NOT NULL DEFAULT 0,
+      last_synced_at INTEGER
+    );
+
   `);
 
   // Column migrations (safe to re-run)

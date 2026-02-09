@@ -35,6 +35,11 @@ function formatDateGroup(ts: number): string {
 }
 
 export function AgentChat() {
+  // Sync session transcripts on mount
+  useEffect(() => {
+    fetch('/api/chat/sync-sessions', { method: 'POST' }).catch(() => {});
+  }, []);
+
   const [expanded, setExpanded] = useState(true);
   const [activeConv, setActiveConv] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -182,7 +187,7 @@ export function AgentChat() {
             <p className="text-[11px] text-muted-foreground">
               {conversations?.length || 0} conversations
               {conversations?.some(c => c.unread_count > 0)
-                ? ` \u00b7 ${conversations.filter(c => c.unread_count > 0).reduce((a, c) => a + c.unread_count, 0)} unread`
+                ? ` · ${conversations.filter(c => c.unread_count > 0).reduce((a, c) => a + c.unread_count, 0)} unread`
                 : ''}
             </p>
           </div>

@@ -84,7 +84,7 @@ export function CronStatus() {
             <h3 className="font-semibold text-sm">Scheduled Jobs</h3>
             <p className="text-[11px] text-muted-foreground">
               {activeJobs.length} active
-              {recentRuns.length > 0 ? ` \u00b7 ${recentRuns.length} ran recently` : ' \u00b7 awaiting first run'}
+              {recentRuns.length > 0 ? ` · ${recentRuns.length} ran recently` : ' · awaiting first run'}
             </p>
           </div>
         </div>
@@ -144,12 +144,12 @@ export function CronStatus() {
                           </span>
                           {nextRun && (
                             <span className="text-[10px] text-primary/60">
-                              \u00b7 next {nextRun}
+                              · next {nextRun}
                             </span>
                           )}
                           {hasRun && (
                             <span className="text-[10px] text-muted-foreground/40">
-                              \u00b7 ran {timeAgo(job.lastRun!)}
+                              · ran {timeAgo(job.lastRun!)}
                             </span>
                           )}
                         </div>

@@ -14,6 +14,8 @@ import { useDashboard } from '@/store';
 import { timeAgo } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
 import type { OverviewStats, Alert, ActivityEntry, DailyMetrics } from '@/types';
+import { PipelineFunnel } from '@/components/pipeline/pipeline-funnel';
+import { AgentSessions } from '@/components/sessions/agent-sessions';
 
 interface AgentBrief {
   id: string;
@@ -252,6 +254,12 @@ export default function OverviewPage() {
             ]}
           />
         </div>
+      </div>
+
+      {/* Pipeline + Sessions row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <PipelineFunnel />
+        <AgentSessions />
       </div>
 
       {/* Bottom row */}
