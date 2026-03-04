@@ -49,9 +49,11 @@ export async function POST(request: Request) {
 
     for (const job of jobs) {
       if (!job.state?.lastRunAtMs) continue;
+      const jobId = normalizeJobId(job.id ?? job.jobId);
+      if (!jobId) continue;
 
       // Check if we already notified for this run
-      const key = `cron:${instance.id}:${job.id}:${job.state.lastRunAtMs}`;
+      const key = `cron:${instance.id}:${jobId}:${job.state.lastRunAtMs}`;
       const existing = db
         .prepare('SELECT 1 FROM notifications WHERE data LIKE ? LIMIT 1')
         .get(`%${key}%`);
@@ -69,8 +71,8 @@ export async function POST(request: Request) {
         `).run(
           status,
           `${agentLabel}: ${job.name} completed`,
-          `${job.skill || job.id} finished in ${duration}. Status: ${job.state.lastStatus || 'unknown'}`,
-          JSON.stringify({ key, job_id: job.id, agent_id: job.agentId, duration_ms: job.state.lastDurationMs }),
+          `${job.skill || jobId} finished in ${duration}. Status: ${job.state.lastStatus || 'unknown'}`,
+          JSON.stringify({ key, job_id: jobId, agent_id: job.agentId, duration_ms: job.state.lastDurationMs }),
         );
         notified++;
       }
@@ -99,7 +101,9 @@ export async function GET(request: Request) {
     const enriched = await Promise.all(
       jobs.map(async (job) => {
         try {
-          const logFile = path.join(logsDir, `${job.id}.log`);
+          const jobId = normalizeJobId(job.id ?? job.jobId);
+          if (!jobId) return { ...job, lastRun: null, lastResult: null };
+          const logFile = path.join(logsDir, `${jobId}.log`);
           const stat = await fs.stat(logFile).catch(() => null);
           if (!stat) return { ...job, lastRun: null, lastResult: null };
 
@@ -145,7 +149,7 @@ export async function PUT(request: Request) {
 
   const actor = requireUser(request);
   const body = await request.json().catch(() => ({}));
-  const id = normalizeJobId(body?.id);
+  const id = normalizeJobId(body?.id ?? body?.jobId);
   const action = body?.action === 'toggle' || body?.action === 'trigger' ? body.action : null;
 
   if (!id) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });

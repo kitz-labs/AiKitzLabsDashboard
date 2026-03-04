@@ -7,11 +7,12 @@ import { timeAgo } from '@/lib/utils';
 
 interface CronJob {
   id: string;
+  jobId?: string;
   agentId: string;
   name: string;
   enabled: boolean;
-  schedule: { kind: string; expr: string; tz: string };
-  payload: { kind: string; message: string; thinking?: string };
+  schedule?: { kind?: string; expr?: string; tz?: string; at?: string; everyMs?: number };
+  payload?: { kind?: string; message?: string; thinking?: string };
   skill?: string;
   state?: { nextRunAtMs?: number };
   lastRun: string | null;
@@ -48,6 +49,30 @@ function describeCron(expr: string): string {
   };
   const dayLabel = dowMap[dow] || `day ${dow}`;
   return `${dayLabel} at ${time}`;
+}
+
+function describeSchedule(job: CronJob): string {
+  const schedule = job.schedule;
+  if (!schedule) return 'No schedule';
+
+  if (schedule.kind === 'every') {
+    const everyMs = schedule.everyMs;
+    if (!everyMs || everyMs <= 0) return 'Every (invalid interval)';
+    if (everyMs < 60_000) return `Every ${Math.max(1, Math.round(everyMs / 1000))}s`;
+    if (everyMs < 3_600_000) return `Every ${Math.max(1, Math.round(everyMs / 60_000))}m`;
+    return `Every ${Math.max(1, Math.round(everyMs / 3_600_000))}h`;
+  }
+
+  if (schedule.kind === 'at') {
+    if (!schedule.at) return 'At (missing time)';
+    const atDate = new Date(schedule.at);
+    if (Number.isNaN(atDate.getTime())) return `At ${schedule.at}`;
+    return `At ${atDate.toLocaleString()}`;
+  }
+
+  const expr = schedule.expr?.trim();
+  if (!expr) return 'Cron schedule';
+  return describeCron(expr);
 }
 
 export function CronStatus() {
@@ -101,14 +126,15 @@ export function CronStatus() {
             <div className="divide-y divide-border/20">
               {sorted.map(job => {
                 const theme = AGENT_THEME[job.agentId] || { color: 'text-muted-foreground', bg: 'bg-muted/10', emoji: '\u{1F916}' };
-                const isExpanded = expandedJob === job.id;
+                const jobId = job.jobId || job.id;
+                const isExpanded = expandedJob === jobId;
                 const hasRun = !!job.lastRun;
                 const nextRun = formatNextRun(job.state?.nextRunAtMs);
 
                 return (
-                  <div key={job.id} className="group">
+                  <div key={jobId} className="group">
                     <button
-                      onClick={() => setExpandedJob(isExpanded ? null : job.id)}
+                      onClick={() => setExpandedJob(isExpanded ? null : jobId)}
                       className="w-full flex items-center gap-3 px-5 py-3 hover:bg-muted/20 transition-colors text-left"
                     >
                       {/* Status icon */}
@@ -128,7 +154,7 @@ export function CronStatus() {
                       {/* Job info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">{job.name || job.id}</span>
+                          <span className="text-sm font-medium">{job.name || jobId}</span>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${theme.bg} ${theme.color}`}>
                             {theme.emoji} {job.agentId}
                           </span>
@@ -140,7 +166,7 @@ export function CronStatus() {
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
                           <span className="text-[11px] text-muted-foreground/60">
-                            {describeCron(job.schedule.expr)}
+                            {describeSchedule(job)}
                           </span>
                           {nextRun && (
                             <span className="text-[10px] text-primary/60">
@@ -163,7 +189,7 @@ export function CronStatus() {
                       <div className="px-5 pb-3 space-y-2">
                         <div className="text-[11px] text-muted-foreground/70 bg-muted/20 rounded-lg p-3">
                           <div className="font-medium text-foreground/80 mb-1">Trigger message:</div>
-                          <div className="whitespace-pre-wrap">{job.payload.message}</div>
+                          <div className="whitespace-pre-wrap">{job.payload?.message || 'No payload message configured'}</div>
                         </div>
                         {job.lastResult && (
                           <div className="text-[11px] text-muted-foreground/70 bg-muted/20 rounded-lg p-3">

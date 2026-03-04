@@ -6,10 +6,13 @@ export type CronSchedule = {
   kind?: string;
   expr?: string;
   tz?: string;
+  at?: string;
+  everyMs?: number;
 };
 
 export type CronJobConfig = {
-  id: string;
+  id?: string;
+  jobId?: string;
   agentId?: string;
   name?: string;
   enabled?: boolean;
@@ -35,17 +38,30 @@ export function getJobsPath(cronDir: string): string {
   return path.join(cronDir, 'jobs.json');
 }
 
+function resolveCronJobId(job: CronJobConfig): string | null {
+  return normalizeJobId(job.id ?? job.jobId);
+}
+
+function normalizeCronJobRecord(job: CronJobConfig): CronJobConfig {
+  const jobId = resolveCronJobId(job);
+  if (!jobId) return job;
+  return { ...job, id: jobId, jobId };
+}
+
 export async function readCronJobsFile(cronDir: string): Promise<CronJobsFile> {
   const jobsPath = getJobsPath(cronDir);
   try {
     const raw = await fs.readFile(jobsPath, 'utf-8');
     const parsed = JSON.parse(raw) as unknown;
     if (Array.isArray(parsed)) {
-      return { version: 1, jobs: parsed as CronJobConfig[] };
+      const jobs = (parsed as CronJobConfig[]).map(normalizeCronJobRecord);
+      return { version: 1, jobs };
     }
     if (typeof parsed === 'object' && parsed !== null) {
       const obj = parsed as { version?: unknown; jobs?: unknown };
-      const jobs = Array.isArray(obj.jobs) ? (obj.jobs as CronJobConfig[]) : [];
+      const jobs = Array.isArray(obj.jobs)
+        ? (obj.jobs as CronJobConfig[]).map(normalizeCronJobRecord)
+        : [];
       const version = typeof obj.version === 'number' ? obj.version : 1;
       return { ...(parsed as Record<string, unknown>), version, jobs };
     }
@@ -86,43 +102,64 @@ export function normalizeJobId(value: unknown): string | null {
 }
 
 export function upsertCronJob(jobsFile: CronJobsFile, job: CronJobConfig): CronJobsFile {
+  const jobId = resolveCronJobId(job);
+  if (!jobId) return jobsFile;
+
+  const normalizedJob = normalizeCronJobRecord(job);
   const now = Date.now();
-  const existing = jobsFile.jobs.find((j) => j.id === job.id);
+  const existing = jobsFile.jobs.find((j) => resolveCronJobId(j) === jobId);
   if (existing) {
-    const merged = { ...existing, ...job, id: existing.id, updatedAtMs: now };
-    return { ...jobsFile, jobs: jobsFile.jobs.map((j) => (j.id === job.id ? merged : j)) };
+    const existingId = resolveCronJobId(existing);
+    if (!existingId) return jobsFile;
+    const merged = normalizeCronJobRecord({
+      ...existing,
+      ...normalizedJob,
+      id: existingId,
+      updatedAtMs: now,
+    });
+    return {
+      ...jobsFile,
+      jobs: jobsFile.jobs.map((j) => (resolveCronJobId(j) === existingId ? merged : j)),
+    };
   }
   const next = {
-    ...job,
-    enabled: job.enabled !== false,
-    createdAtMs: typeof job.createdAtMs === 'number' ? job.createdAtMs : now,
+    ...normalizedJob,
+    id: jobId,
+    jobId,
+    enabled: normalizedJob.enabled !== false,
+    createdAtMs: typeof normalizedJob.createdAtMs === 'number' ? normalizedJob.createdAtMs : now,
     updatedAtMs: now,
   };
   return { ...jobsFile, jobs: [...jobsFile.jobs, next] };
 }
 
 export function deleteCronJob(jobsFile: CronJobsFile, id: string): CronJobsFile {
-  return { ...jobsFile, jobs: jobsFile.jobs.filter((j) => j.id !== id) };
+  return { ...jobsFile, jobs: jobsFile.jobs.filter((j) => resolveCronJobId(j) !== id) };
 }
 
 export function toggleCronJob(jobsFile: CronJobsFile, id: string): CronJobsFile | null {
-  const found = jobsFile.jobs.find((j) => j.id === id);
+  const found = jobsFile.jobs.find((j) => resolveCronJobId(j) === id);
   if (!found) return null;
   const now = Date.now();
   const enabled = found.enabled === false;
-  const next = { ...found, enabled, updatedAtMs: now };
-  return { ...jobsFile, jobs: jobsFile.jobs.map((j) => (j.id === id ? next : j)) };
+  const next = normalizeCronJobRecord({ ...found, enabled, updatedAtMs: now });
+  return {
+    ...jobsFile,
+    jobs: jobsFile.jobs.map((j) => (resolveCronJobId(j) === id ? next : j)),
+  };
 }
 
 export function triggerCronJobNow(jobsFile: CronJobsFile, id: string): CronJobsFile | null {
-  const found = jobsFile.jobs.find((j) => j.id === id);
+  const found = jobsFile.jobs.find((j) => resolveCronJobId(j) === id);
   if (!found) return null;
 
   // Best-effort "run now": bump nextRunAtMs to now.
   const now = Date.now();
   const state = (typeof found.state === 'object' && found.state !== null) ? (found.state as Record<string, unknown>) : {};
   const nextState = { ...state, nextRunAtMs: now };
-  const next = { ...found, state: nextState, updatedAtMs: now };
-  return { ...jobsFile, jobs: jobsFile.jobs.map((j) => (j.id === id ? next : j)) };
+  const next = normalizeCronJobRecord({ ...found, state: nextState, updatedAtMs: now });
+  return {
+    ...jobsFile,
+    jobs: jobsFile.jobs.map((j) => (resolveCronJobId(j) === id ? next : j)),
+  };
 }
-

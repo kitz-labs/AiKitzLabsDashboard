@@ -55,17 +55,17 @@ export async function POST(req: NextRequest) {
 
   const rawJob = body?.job as CronJobConfig | undefined;
   const job = rawJob ? stripDerivedFields(rawJob) : undefined;
-  const id = normalizeJobId(job?.id);
+  const id = normalizeJobId(job?.id ?? job?.jobId);
   if (!id) return NextResponse.json({ error: 'Invalid job.id' }, { status: 400 });
 
   try {
     const instance = getInstance(getInstanceId(req));
     const { cronDir } = resolveOpenClawPaths(instance);
     const jobsFile = await readCronJobsFile(cronDir);
-    if (jobsFile.jobs.some((j) => j.id === id)) {
+    if (jobsFile.jobs.some((j) => normalizeJobId(j.id ?? j.jobId) === id)) {
       return NextResponse.json({ error: 'Job already exists' }, { status: 409 });
     }
-    const next = upsertCronJob(jobsFile, { ...(job || {}), id });
+    const next = upsertCronJob(jobsFile, { ...(job || {}), id, jobId: id });
     await writeCronJobsFile(cronDir, next);
 
     logAudit({
@@ -92,17 +92,17 @@ export async function PATCH(req: NextRequest) {
 
   const rawJob = body?.job as CronJobConfig | undefined;
   const job = rawJob ? stripDerivedFields(rawJob) : undefined;
-  const id = normalizeJobId(job?.id);
+  const id = normalizeJobId(job?.id ?? job?.jobId);
   if (!id) return NextResponse.json({ error: 'Invalid job.id' }, { status: 400 });
 
   try {
     const instance = getInstance(getInstanceId(req));
     const { cronDir } = resolveOpenClawPaths(instance);
     const jobsFile = await readCronJobsFile(cronDir);
-    if (!jobsFile.jobs.some((j) => j.id === id)) {
+    if (!jobsFile.jobs.some((j) => normalizeJobId(j.id ?? j.jobId) === id)) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
-    const next = upsertCronJob(jobsFile, { ...(job || {}), id });
+    const next = upsertCronJob(jobsFile, { ...(job || {}), id, jobId: id });
     await writeCronJobsFile(cronDir, next);
 
     logAudit({
@@ -126,14 +126,14 @@ export async function DELETE(req: NextRequest) {
   }
   const actor = requireUser(req as unknown as Request);
 
-  const id = normalizeJobId(req.nextUrl.searchParams.get('id'));
+  const id = normalizeJobId(req.nextUrl.searchParams.get('id') || req.nextUrl.searchParams.get('jobId'));
   if (!id) return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
 
   try {
     const instance = getInstance(getInstanceId(req));
     const { cronDir } = resolveOpenClawPaths(instance);
     const jobsFile = await readCronJobsFile(cronDir);
-    if (!jobsFile.jobs.some((j) => j.id === id)) {
+    if (!jobsFile.jobs.some((j) => normalizeJobId(j.id ?? j.jobId) === id)) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
     const next = deleteCronJob(jobsFile, id);

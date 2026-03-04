@@ -15,6 +15,36 @@ function safeExec(cmd: string[], fallback = ''): string {
   }
 }
 
+function validateOpenClawConfig(bin: string): {
+  available: boolean;
+  ok: boolean;
+  details?: unknown;
+  error?: string;
+} {
+  try {
+    const stdout = execFileSync(bin, ['config', 'validate', '--json'], { encoding: 'utf-8' }).trim();
+    if (!stdout) {
+      return { available: true, ok: true };
+    }
+    try {
+      const parsed = JSON.parse(stdout) as Record<string, unknown>;
+      const valid = parsed?.valid;
+      const isValid = typeof valid === 'boolean' ? valid : true;
+      return { available: true, ok: isValid, details: parsed };
+    } catch {
+      return { available: true, ok: true, details: stdout };
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const missing = /ENOENT|not found/i.test(message);
+    return {
+      available: !missing,
+      ok: false,
+      error: missing ? `${bin} not found in PATH` : message,
+    };
+  }
+}
+
 function getInstanceId(request: Request): string | null {
   try {
     const url = new URL(request.url);
@@ -59,6 +89,7 @@ export async function GET(request: Request) {
     process.env.HERMES_DEPLOY_LOG_DIR?.trim() || path.join(logsDir, 'deploy');
   const scriptPath = process.env.HERMES_DEPLOY_SCRIPT_PATH?.trim() || '';
   const serviceName = process.env.HERMES_SERVICE_NAME?.trim() || 'hermes-dashboard.service';
+  const openclawBin = process.env.HERMES_ADMIN_CLI || process.env.OPENCLAW_BIN || 'openclaw';
 
   try {
     const running = scriptPath
@@ -67,6 +98,7 @@ export async function GET(request: Request) {
     const isActive = safeExec(['systemctl', 'is-active', serviceName], 'unknown');
     const log = latestLog(logDir);
     const lockExists = fs.existsSync(lockFile);
+    const configValidation = validateOpenClawConfig(openclawBin);
 
     return NextResponse.json({
       instance: instance.id,
@@ -80,6 +112,10 @@ export async function GET(request: Request) {
         lock_exists: lockExists,
         running_pids: running ? running.split('\n').filter(Boolean) : [],
       },
+      openclaw: {
+        bin: openclawBin,
+        config_validate: configValidation,
+      },
       latest_log: log,
     });
   } catch (error) {
@@ -87,4 +123,3 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Failed to read deploy status' }, { status: 500 });
   }
 }
-

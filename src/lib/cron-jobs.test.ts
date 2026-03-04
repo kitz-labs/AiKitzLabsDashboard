@@ -71,3 +71,52 @@ test('writeCronJobsFile writes jobs.json and creates backups when overwriting', 
   const bak = await fs.readFile(path.join(cronDir, 'jobs.json.bak'), 'utf-8');
   assert.ok(bak.includes('"jobs"'));
 });
+
+test('readCronJobsFile normalizes legacy id and canonical jobId fields', async () => {
+  const cronDir = path.join(tempDir, 'cron-normalize');
+  await fs.mkdir(cronDir, { recursive: true });
+  await fs.writeFile(
+    path.join(cronDir, 'jobs.json'),
+    JSON.stringify({
+      version: 1,
+      jobs: [
+        { id: 'legacy-id', enabled: true },
+        { jobId: 'canonical-id', enabled: true },
+      ],
+    }, null, 2),
+    'utf-8',
+  );
+
+  const file = await readCronJobsFile(cronDir);
+  assert.equal(file.jobs.length, 2);
+  assert.equal(file.jobs[0].id, 'legacy-id');
+  assert.equal(file.jobs[0].jobId, 'legacy-id');
+  assert.equal(file.jobs[1].id, 'canonical-id');
+  assert.equal(file.jobs[1].jobId, 'canonical-id');
+});
+
+test('upsert/toggle/trigger/delete support jobId-only records', async () => {
+  const base = {
+    version: 1,
+    jobs: [{ jobId: 'job-a', enabled: true }],
+  };
+
+  const upserted = upsertCronJob(base, { jobId: 'job-b', enabled: true });
+  assert.equal(upserted.jobs.length, 2);
+  const jobB = upserted.jobs.find((job) => job.id === 'job-b');
+  assert.ok(jobB);
+  assert.equal(jobB.jobId, 'job-b');
+
+  const toggled = toggleCronJob(upserted, 'job-a');
+  assert.ok(toggled);
+  const jobAAfterToggle = toggled.jobs.find((job) => job.id === 'job-a');
+  assert.ok(jobAAfterToggle);
+  assert.equal(jobAAfterToggle.enabled, false);
+
+  const triggered = triggerCronJobNow(toggled, 'job-a');
+  assert.ok(triggered);
+  const jobAAfterTrigger = triggered.jobs.find((job) => job.id === 'job-a');
+  assert.ok(jobAAfterTrigger);
+  const nextRun = jobAAfterTrigger.state && (jobAAfterTrigger.state as Record<string, unknown>).nextRunAtMs;
+  assert.equal(typeof nextRun, 'number');
+});
