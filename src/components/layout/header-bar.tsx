@@ -7,7 +7,7 @@ import {
 import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { useEffect, useState, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useDashboard } from '@/store';
 import { t } from '@/lib/i18n';
 import { useSmartPoll } from '@/hooks/use-smart-poll';
@@ -23,6 +23,7 @@ interface HeaderStats {
 export function HeaderBar() {
   const { feedOpen, toggleFeed, realOnly, toggleRealOnly, language } = useDashboard();
   const [username, setUsername] = useState<string | null>(null);
+  const pathname = usePathname();
 
   // Lightweight poll for header stats
   const { data: stats } = useSmartPoll<HeaderStats>(
@@ -38,23 +39,21 @@ export function HeaderBar() {
   }, []);
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-[var(--header-height)] bg-card/90 backdrop-blur-sm border-b border-border/70 flex items-center justify-between px-3 sm:px-4 z-50">
+    <header className="fixed top-0 left-0 right-0 z-50 flex h-[var(--header-height)] items-center justify-between border-b border-border/55 bg-card/78 px-3 backdrop-blur-xl sm:px-4 md:left-[var(--nav-width)] md:border-b-0 md:bg-transparent md:px-5">
       <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-md bg-card border border-border/60 flex items-center justify-center overflow-hidden">
-          <Image src="/ai-kitz-labs-logo.svg" alt="AI Kitz Labs" width={28} height={28} />
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm tracking-tight">{t(language, 'brandName')}</span>
-          {username && (
-            <span className="hidden sm:inline-flex rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-              @{username}
-            </span>
-          )}
+        <div className="flex items-center gap-2.5 rounded-2xl border border-border/45 bg-background/70 px-3 py-2 shadow-[0_10px_28px_rgba(3,8,20,0.10)] md:min-w-[220px]">
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl border border-primary/20 bg-primary/8 md:hidden">
+            <Image src="/ai-kitz-labs-logo.svg" alt="AI Kitz Labs" width={24} height={24} />
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-[11px] uppercase tracking-[0.22em] text-muted-foreground/75">Workspace</div>
+            <div className="truncate text-sm font-semibold tracking-tight text-foreground">{formatPathLabel(pathname, language)}</div>
+          </div>
+          {username && <span className="hidden rounded-full border border-border/50 bg-muted/30 px-2 py-0.5 text-[10px] font-medium text-muted-foreground lg:inline-flex">@{username}</span>}
         </div>
 
-        {/* Quick stats — hidden on small screens */}
         {stats && (
-          <div className="hidden lg:flex items-center gap-2.5 ml-2.5 pl-2.5 border-l border-border/30">
+          <div className="hidden xl:flex items-center gap-2 rounded-2xl border border-border/45 bg-background/60 px-3 py-2 shadow-[0_10px_28px_rgba(3,8,20,0.08)]">
             <QuickStat icon={PenLine} value={stats.posts_today} label={t(language, 'labelPosts')} />
             <QuickStat icon={Mail} value={stats.emails_sent} label={t(language, 'labelSent')} />
             <QuickStat icon={Users} value={stats.pipeline_count} label={t(language, 'labelPipeline')} />
@@ -62,7 +61,7 @@ export function HeaderBar() {
         )}
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-2 rounded-2xl border border-border/45 bg-background/72 px-2 py-2 shadow-[0_10px_28px_rgba(3,8,20,0.10)] sm:gap-3">
         <SeedToggle active={realOnly} onToggle={toggleRealOnly} language={language} />
         <SearchTrigger language={language} />
         <NotificationBell language={language} />
@@ -75,9 +74,23 @@ export function HeaderBar() {
   );
 }
 
+function formatPathLabel(pathname: string, language: 'en' | 'de') {
+  if (pathname === '/') {
+    return language === 'de' ? 'Overview' : 'Overview';
+  }
+
+  return pathname
+    .split('/')
+    .filter(Boolean)
+    .slice(-2)
+    .map((segment) => segment.replace(/[-_]/g, ' '))
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' · ');
+}
+
 function QuickStat({ icon: Icon, value, label }: { icon: typeof PenLine; value: number; label: string }) {
   return (
-    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
       <Icon size={11} />
       <span className="font-mono font-medium text-foreground">{value}</span>
       <span>{label}</span>

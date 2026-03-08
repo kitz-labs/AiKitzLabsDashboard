@@ -4,6 +4,7 @@ services:
     pull_policy: always
     container_name: kitz-dashboard
     restart: unless-stopped
+    user: "0:0"
     ports:
       - "${HOST_PORT:-3000}:3000"
     env_file:
@@ -17,6 +18,8 @@ services:
       KITZ_CODING_STORAGE_DIR: /data/state/coding
     volumes:
       - kitz-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${KITZ_OPENCLAW_HOST_DATA_PATH:-/tmp/kitz-openclaw-missing}:/openclaw-data:ro
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 30s

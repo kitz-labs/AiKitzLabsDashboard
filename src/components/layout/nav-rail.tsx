@@ -123,33 +123,35 @@ export function NavRail() {
   }, []);
 
   return (
-    <nav className="nav-rail fixed left-0 top-[var(--header-height)] bottom-0 w-[var(--nav-width)] bg-card/92 backdrop-blur-lg border-r border-border/70 z-40 hidden md:flex flex-col">
-      <div className="px-3 py-3 border-b border-border/60 flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-card border border-border/60 flex items-center justify-center overflow-hidden">
-          <Image src="/ai-kitz-labs-logo.svg" alt="AI Kitz Labs" width={32} height={32} />
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold leading-none">{t(language, 'brandName')}</div>
-          <div className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">{username || t(language, 'missionView')}</div>
+    <nav className="nav-rail fixed left-0 top-0 bottom-0 z-40 hidden w-[var(--nav-width)] md:flex flex-col border-r border-border/60 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--card)_96%,transparent),color-mix(in_srgb,var(--surface-1)_92%,transparent))] backdrop-blur-xl">
+      <div className="px-4 pt-4 pb-3">
+        <div className="rounded-[22px] border border-border/60 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--card)_98%,transparent),color-mix(in_srgb,var(--surface-1)_90%,transparent))] px-3 py-3 shadow-[0_16px_34px_rgba(3,8,20,0.14)]">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-2xl border border-primary/20 bg-primary/8 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+              <Image src="/ai-kitz-labs-logo.svg" alt="AI Kitz Labs" width={34} height={34} />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-semibold tracking-tight text-foreground">{t(language, 'brandName')}</div>
+              <div className="mt-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] text-muted-foreground/80">
+                <span className="inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400/90 shadow-[0_0_10px_rgba(52,211,153,0.45)]" />
+                {username ? `@${username}` : t(language, 'missionView')}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2 py-2">
+      <div className="flex-1 overflow-y-auto px-3 pb-3">
         {navGroups.map((group, idx) => {
-          const groupActive = group.items.some(item => isActive(pathname, item.href));
           return (
           <div
             key={group.label}
-            className={`group ${idx > 0 ? 'mt-3 pt-3 border-t border-border/50' : ''}`}
+            className={`${idx > 0 ? 'mt-4 pt-4 border-t border-border/35' : ''}`}
           >
-            <div className="px-2 pb-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">
+            <div className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted-foreground/70">
               {group.label}
             </div>
-            <div className={`space-y-0.5 overflow-hidden transition-all duration-200 ${
-              groupActive
-                ? 'max-h-96 opacity-100'
-                : 'max-h-0 opacity-0 group-hover:max-h-96 group-hover:opacity-100'
-            }`}>
+            <div className="space-y-1">
               {group.items.map((item) => {
                 const active = isActive(pathname, item.href);
                 const count = item.countKey && counts ? counts[item.countKey] : 0;
@@ -158,17 +160,19 @@ export function NavRail() {
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`relative w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${
+                    className={`group/nav relative flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-smooth ${
                       active
-                        ? 'bg-primary/14 text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/80'
+                        ? 'bg-primary/[0.14] text-primary shadow-[inset_0_1px_0_rgba(255,255,255,0.03),0_12px_26px_rgba(45,120,255,0.12)]'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.03]'
                     }`}
                   >
-                    {active && <span className="absolute left-0 w-0.5 h-5 bg-primary rounded-r" />}
-                    <Icon size={16} />
+                    {active && <span className="absolute left-1 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full bg-primary/80 shadow-[0_0_12px_rgba(45,120,255,0.45)]" />}
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-xl border transition-smooth ${active ? 'border-primary/25 bg-primary/10 text-primary' : 'border-border/45 bg-background/40 text-muted-foreground group-hover/nav:border-border/70 group-hover/nav:bg-background/65 group-hover/nav:text-foreground'}`}>
+                      <Icon size={16} />
+                    </span>
                     <span className="flex-1 truncate">{item.label}</span>
                     {count > 0 && (
-                      <span className={`min-w-[18px] h-4 px-1 text-[9px] font-bold rounded-full flex items-center justify-center ${
+                      <span className={`flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-[9px] font-bold ${
                         item.countKey === 'signals_today' ? 'count-badge-info' : 'count-badge'
                       }`}>
                         {count > 99 ? '99+' : count}
@@ -183,52 +187,54 @@ export function NavRail() {
         })}
       </div>
 
-      <div className="px-2 py-2 border-t border-border/60 flex items-center gap-2">
+      <div className="border-t border-border/45 px-3 py-3">
+        <div className="rounded-[22px] border border-border/55 bg-background/45 p-2 shadow-[0_10px_24px_rgba(3,8,20,0.08)]">
         <div className="flex-1 space-y-1">
           <Link
             href="/github"
-            className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${
+            className={`relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-smooth ${
               pathname.startsWith('/github')
-                ? 'bg-primary/14 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/80'
+                ? 'bg-primary/[0.14] text-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.03]'
             }`}
           >
-            {pathname.startsWith('/github') && <span className="absolute left-0 w-0.5 h-5 bg-primary rounded-r" />}
-            <Github size={16} />
+            {pathname.startsWith('/github') && <span className="absolute left-1 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full bg-primary/80" />}
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/45 bg-background/50"><Github size={16} /></span>
             <span>{t(language, 'navGithub')}</span>
           </Link>
           <Link
             href="/coding"
-            className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${
+            className={`relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-smooth ${
               pathname.startsWith('/coding')
-                ? 'bg-primary/14 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/80'
+                ? 'bg-primary/[0.14] text-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.03]'
             }`}
           >
-            {pathname.startsWith('/coding') && <span className="absolute left-0 w-0.5 h-5 bg-primary rounded-r" />}
-            <Code2 size={16} />
+            {pathname.startsWith('/coding') && <span className="absolute left-1 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full bg-primary/80" />}
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/45 bg-background/50"><Code2 size={16} /></span>
             <span>{t(language, 'navCoding')}</span>
           </Link>
           <Link
             href="/settings"
-            className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${
+            className={`relative flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition-smooth ${
               pathname === '/settings'
-                ? 'bg-primary/14 text-primary'
-                : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/80'
+                ? 'bg-primary/[0.14] text-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/[0.03]'
             }`}
           >
-            {pathname === '/settings' && <span className="absolute left-0 w-0.5 h-5 bg-primary rounded-r" />}
-            <Settings size={16} />
+            {pathname === '/settings' && <span className="absolute left-1 top-1/2 h-7 w-1 -translate-y-1/2 rounded-full bg-primary/80" />}
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/45 bg-background/50"><Settings size={16} /></span>
             <span>{t(language, 'navSettings')}</span>
           </Link>
         </div>
         <button
-          className="h-8 px-2 rounded-lg border border-border/50 bg-muted/40 text-[10px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
+          className="mt-2 h-10 w-full rounded-2xl border border-border/50 bg-muted/35 text-[11px] font-mono text-muted-foreground transition-smooth hover:bg-muted/45 hover:text-foreground"
           onClick={toggleLanguage}
           title={t(language, 'language')}
         >
           {language.toUpperCase()}
         </button>
+        </div>
       </div>
     </nav>
   );
