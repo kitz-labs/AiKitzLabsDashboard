@@ -1,7 +1,7 @@
 FROM node:20-bookworm-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@9.15.5 --activate
+RUN corepack enable && corepack prepare pnpm@10.30.3 --activate
 
 FROM base AS deps
 WORKDIR /app

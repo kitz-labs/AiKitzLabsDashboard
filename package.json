@@ -2,6 +2,7 @@
   "name": "kitz-dashboard",
   "version": "0.2.0",
   "private": false,
+  "packageManager": "pnpm@10.30.3",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "node -e \"require('node:fs').rmSync('.next',{recursive:true,force:true,maxRetries:10,retryDelay:200})\" && next build --webpack",
