@@ -16,7 +16,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NODE_ENV=production
-RUN pnpm build:standalone
+RUN pnpm build
 
 FROM node:20-bookworm-slim AS runner
 WORKDIR /app
@@ -27,9 +27,11 @@ RUN groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 --gid nodejs kitz \
   && mkdir -p /data/state/coding \
   && chown -R kitz:nodejs /app /data
-COPY --from=builder --chown=kitz:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=kitz:nodejs /app/.next/static ./.next/static
+COPY --from=deps --chown=kitz:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=kitz:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=kitz:nodejs /app/next.config.ts ./next.config.ts
 COPY --from=builder --chown=kitz:nodejs /app/public ./public
+COPY --from=builder --chown=kitz:nodejs /app/.next ./.next
 USER kitz
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["pnpm", "start"]

@@ -34,6 +34,8 @@ Fill in at least:
 docker compose up -d --build
 ```
 
+This setup uses standard Next.js production mode (`next build` + `next start`) to keep VPS hosting simple.
+
 ## 5. Check status
 
 ```bash
