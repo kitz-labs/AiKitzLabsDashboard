@@ -29,7 +29,7 @@ The service now assumes:
 
 - app checkout at `/opt/kitz-dashboard`
 - runtime user `kitz`
-- standalone build already present in `.next/standalone`
+- production build already present in `.next`
 - runtime writes only under `/opt/kitz-dashboard/.next`, `/var/lib/kitz-dashboard`, and `/var/log/kitz-dashboard`
 
 ## Env File
@@ -62,7 +62,7 @@ move those values into the env file and remove them from the drop-in.
 
 ## Build Notes
 
-Use `pnpm build:standalone` for deployments that run `.next/standalone/server.js`, so `/_next/static/*` assets are copied into the standalone bundle.
+Use `pnpm build` for deployments that run `next start` directly from the project root.
 
 ## Exact Target Server Setup
 
@@ -81,7 +81,7 @@ sudo -u kitz git clone https://github.com/kitz-labs/AiKitzLabsDashboard.git /opt
 cd /opt/kitz-dashboard
 corepack enable
 pnpm install --frozen-lockfile
-pnpm build:standalone
+pnpm build
 ```
 
 Install env and service files:
@@ -108,13 +108,13 @@ Deploy a new version later:
 cd /opt/kitz-dashboard
 sudo -u kitz git pull --ff-only
 pnpm install --frozen-lockfile
-pnpm build:standalone
+pnpm build
 sudo systemctl restart kitz-dashboard
 ```
 
 ## 1Password (Recommended)
 
-If you deploy with 1Password, the standalone entrypoint supports resolving secrets at runtime via op run.
+If you deploy with 1Password, the production entrypoint supports resolving secrets at runtime via `op run`.
 
 - Non-secret config: /etc/kitz-dashboard/kitz-dashboard.env
 - op:// references (non-secret template): /etc/kitz-dashboard/kitz-dashboard.op.env
@@ -128,4 +128,4 @@ A template for the op env file lives at: ops/1password/kitz-dashboard.op.env.exa
 
 Notes:
 - Analytics keys like PLAUSIBLE_SITE_ID / PLAUSIBLE_API_KEY should live in 1Password and be referenced from the op env template.
-- scripts/start-standalone.sh uses op run according to `KITZ_1PASSWORD_MODE` and `KITZ_OP_ENV_FILE`.
+- `scripts/start-production.sh` uses `op run` according to `KITZ_1PASSWORD_MODE` and `KITZ_OP_ENV_FILE`.

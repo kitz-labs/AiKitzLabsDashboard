@@ -6,18 +6,12 @@ cd "$ROOT"
 
 export PORT="${PORT:-3000}"
 
-"$ROOT/scripts/prepare-standalone.sh"
-
-# Optional 1Password mode:
-# - off: never use op run
-# - auto (default): use op run when available; otherwise fall back to existing env
-# - required: fail startup unless op run succeeds
 OP_MODE="${KITZ_1PASSWORD_MODE:-auto}"
 OP_ENV_FILE="${KITZ_OP_ENV_FILE:-/etc/kitz-dashboard/kitz-dashboard.op.env}"
 
 run_with_op() {
   echo "[start] resolving runtime env via 1Password: $OP_ENV_FILE" >&2
-  op run --env-file="$OP_ENV_FILE" -- node "$ROOT/.next/standalone/server.js"
+  op run --env-file="$OP_ENV_FILE" -- pnpm start
 }
 
 can_use_op() {
@@ -40,7 +34,6 @@ case "${OP_MODE,,}" in
     ;;
   auto|"")
     if can_use_op; then
-      # If 1Password is temporarily rate-limiting/failing, fall back to existing env.
       if run_with_op; then
         exit 0
       fi
@@ -55,4 +48,4 @@ case "${OP_MODE,,}" in
     ;;
 esac
 
-exec node "$ROOT/.next/standalone/server.js"
+exec pnpm start

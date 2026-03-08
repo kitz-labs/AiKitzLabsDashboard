@@ -1,5 +1,5 @@
 [Unit]
-Description=AI Kitz Labs Dashboard (Next.js standalone)
+Description=AI Kitz Labs Dashboard (Next.js production server)
 After=network-online.target
 Wants=network-online.target
 StartLimitIntervalSec=120
@@ -27,8 +27,8 @@ Environment=KITZ_OP_ENV_FILE=/etc/kitz-dashboard/kitz-dashboard.op.env
 # Optional: 1Password runtime mode (off|auto|required). Default is auto.
 Environment=KITZ_1PASSWORD_MODE=auto
 
-ExecStartPre=/usr/bin/test -f /opt/kitz-dashboard/.next/standalone/server.js
-ExecStart=/opt/kitz-dashboard/scripts/start-standalone.sh
+ExecStartPre=/usr/bin/test -d /opt/kitz-dashboard/.next
+ExecStart=/opt/kitz-dashboard/scripts/start-production.sh
 Restart=on-failure
 RestartSec=5
 TimeoutStartSec=120

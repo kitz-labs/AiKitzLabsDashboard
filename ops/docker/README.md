@@ -6,7 +6,7 @@ Best fit: a small Linux VPS such as Hostinger, with Nginx in front of Docker.
 
 ## Files
 
-- `Dockerfile` builds the standalone Next.js runtime.
+- `Dockerfile` builds the app with `next build` and starts it with `next start`.
 - `docker-compose.yml` starts the app with a persistent named volume.
 - `ops/docker/kitz-dashboard.env.example` contains the runtime secrets/config template.
 
@@ -89,6 +89,8 @@ Or simply:
 ```bash
 bash ops/docker/deploy.sh
 ```
+
+This VPS setup uses the plain Next.js production server with `next build` and `next start`.
 
 ## Troubleshooting
 

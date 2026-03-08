@@ -10,7 +10,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'PORT=3010 HOSTNAME=127.0.0.1 node .next/standalone/server.js',
+    command: 'PORT=3010 HOSTNAME=127.0.0.1 pnpm start',
     port: 3010,
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
