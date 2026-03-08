@@ -2,6 +2,8 @@
 
 This setup runs the dashboard as a single Docker Compose service on port `3000`.
 
+Best fit: a small Linux VPS such as Hostinger, with Nginx in front of Docker.
+
 ## Files
 
 - `Dockerfile` builds the standalone Next.js runtime.
@@ -26,6 +28,12 @@ Required values:
 
 ```bash
 docker compose up -d --build
+```
+
+Or use the included helper:
+
+```bash
+bash ops/docker/deploy.sh
 ```
 
 ## Logs
@@ -54,3 +62,36 @@ If Hostinger proxies traffic through Nginx or another frontend, forward requests
 - `http://127.0.0.1:3000`
 
 If you terminate TLS upstream, keep `AUTH_COOKIE_SECURE=true`.
+
+An example Nginx server block is included in:
+
+- `ops/docker/nginx.hostinger.conf.example`
+
+## Hostinger VPS
+
+Complete VPS setup steps live in:
+
+- `ops/docker/hostinger-vps-setup.md`
+
+## Update flow
+
+For later updates on the server:
+
+```bash
+git pull --ff-only
+docker compose up -d --build
+docker compose logs -f dashboard
+```
+
+Or simply:
+
+```bash
+bash ops/docker/deploy.sh
+```
+
+## Troubleshooting
+
+- `docker compose logs -f dashboard` to inspect startup errors
+- `docker compose ps` to verify the container is up
+- `curl http://127.0.0.1:3000` on the VPS to verify the app before checking Nginx
+- If Nginx returns `502`, verify the container actually built and is listening on `3000`

@@ -57,6 +57,12 @@ Open `http://localhost:3000`.
 
 Initial admin access is seeded from `AUTH_USER` / `AUTH_PASS` on first run when the users table is empty.
 
+## Docker Deploy
+
+- Docker Compose: [`docker-compose.yml`](./docker-compose.yml)
+- Full VPS guide: [`ops/docker/hostinger-vps-setup.md`](./ops/docker/hostinger-vps-setup.md)
+- Docker deploy notes: [`ops/docker/README.md`](./ops/docker/README.md)
+
 ## Install Commands
 
 ```bash
