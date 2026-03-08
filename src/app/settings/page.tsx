@@ -91,6 +91,22 @@ interface AlertPolicy {
   alert_never_ratio_threshold: number;
 }
 
+type ApiProvider = 'openai' | 'anthropic' | 'google' | 'openrouter' | 'deepseek';
+
+interface ApiProviderProfile {
+  key: string;
+  baseUrl: string;
+  model: string;
+  health: 'healthy' | 'warning' | 'offline';
+  usage: string;
+  credits: string;
+  organization?: string;
+  project?: string;
+  workspace?: string;
+  region?: string;
+  referer?: string;
+}
+
 interface MemoryEffectPayload {
   instance: string;
   available: boolean;
@@ -110,7 +126,13 @@ interface MemoryEffectPayload {
 }
 
 export default function SettingsPage() {
-  const { language, toggleLanguage } = useDashboard();
+  const {
+    language,
+    openClawEnabled,
+    toggleOpenClaw,
+    openClawMode,
+    setOpenClawMode,
+  } = useDashboard();
   const dashboardVersion = pkg.version || 'dev';
   const roleMatrix = getRoleMatrix();
   const [instances, setInstances] = useState<HermesInstance[]>([]);
@@ -134,6 +156,94 @@ export default function SettingsPage() {
   const [alertPolicies, setAlertPolicies] = useState<Record<InstanceId, AlertPolicy | null>>({});
   const [savingAlertPolicy, setSavingAlertPolicy] = useState<Record<InstanceId, boolean>>({});
   const [memoryEffects, setMemoryEffects] = useState<Record<InstanceId, MemoryEffectPayload | null>>({});
+  const [cliApp, setCliApp] = useState('Mail');
+  const [cliConnection, setCliConnection] = useState('Local');
+  const [cliSessions, setCliSessions] = useState<Array<{ id: string; app: string; connection: string }>>([
+    { id: 'macos-cli-01', app: 'Mail', connection: 'Local' },
+  ]);
+  const cliApps = ['Mail', 'WhatsApp', 'Telegram', 'Websites', 'Instagram', 'Facebook', 'LinkedIn', 'Stripe', 'Files'];
+  const [apiProvider, setApiProvider] = useState<ApiProvider>('openai');
+  const [apiProfiles, setApiProfiles] = useState<Record<ApiProvider, ApiProviderProfile>>({
+    openai: {
+      key: 'sk-live-••••••••••',
+      baseUrl: 'https://api.openai.com/v1',
+      model: 'gpt-5.4',
+      health: 'healthy',
+      usage: '1.2M / 5M tokens',
+      credits: '$182.40',
+      organization: 'org_aikitzlabs',
+      project: 'dashboard-prod',
+    },
+    anthropic: {
+      key: 'sk-ant-••••••••••',
+      baseUrl: 'https://api.anthropic.com',
+      model: 'claude-3-7-sonnet',
+      health: 'healthy',
+      usage: '840k / 3M tokens',
+      credits: '$96.00',
+      workspace: 'aikitz-labs',
+    },
+    google: {
+      key: 'AIza••••••••••',
+      baseUrl: 'https://generativelanguage.googleapis.com',
+      model: 'gemini-2.0-flash',
+      health: 'warning',
+      usage: '620k / 2M tokens',
+      credits: '$74.10',
+      project: 'aikitz-growth',
+      region: 'europe-west3',
+    },
+    openrouter: {
+      key: 'sk-or-v1-••••••••••',
+      baseUrl: 'https://openrouter.ai/api/v1',
+      model: 'openai/gpt-4.1-mini',
+      health: 'healthy',
+      usage: '2.4M / 8M tokens',
+      credits: '$58.20',
+      referer: 'https://aikitz.at',
+    },
+    deepseek: {
+      key: 'sk-ds-••••••••••',
+      baseUrl: 'https://api.deepseek.com',
+      model: 'deepseek-chat',
+      health: 'offline',
+      usage: '0 / 1M tokens',
+      credits: '$0.00',
+      organization: 'aikitz-experiments',
+    },
+  });
+
+  const providerOptions: Array<{ value: ApiProvider; label: string; platform: string }> = [
+    { value: 'openai', label: 'OpenAI', platform: 'https://platform.openai.com/api-keys' },
+    { value: 'anthropic', label: 'Anthropic', platform: 'https://console.anthropic.com/settings/keys' },
+    { value: 'google', label: 'Google AI', platform: 'https://aistudio.google.com/app/apikey' },
+    { value: 'openrouter', label: 'OpenRouter', platform: 'https://openrouter.ai/keys' },
+    { value: 'deepseek', label: 'DeepSeek', platform: 'https://platform.deepseek.com/api_keys' },
+  ];
+
+  const currentApiProfile = apiProfiles[apiProvider];
+
+  const updateApiProfile = (field: keyof ApiProviderProfile, value: string) => {
+    setApiProfiles((prev) => ({
+      ...prev,
+      [apiProvider]: {
+        ...prev[apiProvider],
+        [field]: value,
+      },
+    }));
+  };
+
+  const connectCli = () => {
+    setCliSessions((prev) => {
+      const id = `${cliConnection.toLowerCase()}-${cliApp.toLowerCase().replace(/\s+/g, '-')}`;
+      if (prev.some((s) => s.id === id)) return prev;
+      return [...prev, { id, app: cliApp, connection: cliConnection }];
+    });
+  };
+
+  const disconnectCli = () => {
+    setCliSessions((prev) => prev.filter((s) => s.app !== cliApp));
+  };
 
   useEffect(() => {
     let alive = true;
@@ -418,13 +528,6 @@ export default function SettingsPage() {
         <div className="panel-header">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
             <Settings size={20} /> {t(language, 'titleSettings')}
-            <button
-              className="ml-2 h-7 flex items-center gap-1.5 px-2.5 rounded-md text-[11px] font-medium transition-colors bg-muted/50 text-muted-foreground hover:bg-muted border border-border/30"
-              onClick={toggleLanguage}
-              title={t(language, 'language')}
-            >
-              <span className="font-mono text-[10px]">{language.toUpperCase()}</span>
-            </button>
           </h1>
           <p className="text-sm text-muted-foreground">
             {t(language, 'settingsSubtitle')}
@@ -433,10 +536,10 @@ export default function SettingsPage() {
         <div className="panel-body">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {[
-              { key: 'general', label: 'General' },
-              { key: 'memory', label: 'Memory' },
-              { key: 'access', label: 'Access' },
-              { key: 'about', label: 'About' },
+              { key: 'general', label: t(language, 'settingsTabGeneral') },
+              { key: 'memory', label: t(language, 'settingsTabMemory') },
+              { key: 'access', label: t(language, 'settingsTabAccess') },
+              { key: 'about', label: t(language, 'settingsTabAbout') },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -458,39 +561,42 @@ export default function SettingsPage() {
       {/* Database Info */}
       {activeTab === 'general' && (
       <>
-      <div className="panel p-5 space-y-4">
-        <h2 className="text-sm font-medium flex items-center gap-2">
-          <Database size={14} className="text-primary" /> Database
-        </h2>
-
+      <div className="panel p-5 space-y-3 group">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium flex items-center gap-2">
+            <Database size={14} className="text-primary" /> {t(language, 'settingsDatabaseTitle')}
+          </h2>
+          <span className="text-[10px] text-muted-foreground">{t(language, 'settingsHoverHint')}</span>
+        </div>
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-[1200px] group-hover:opacity-100">
         {syncInfo ? (
           <>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <span className="text-xs text-muted-foreground block mb-0.5">DB Path</span>
+                <span className="text-xs text-muted-foreground block mb-0.5">{t(language, 'settingsDbPath')}</span>
                 <code className="text-[11px] bg-muted px-2 py-1 rounded block truncate">
                   {syncInfo.db_path}
                 </code>
               </div>
               <div>
-                <span className="text-xs text-muted-foreground block mb-0.5">State Directory</span>
+                <span className="text-xs text-muted-foreground block mb-0.5">{t(language, 'settingsStateDir')}</span>
                 <code className="text-[11px] bg-muted px-2 py-1 rounded block truncate">
                   {syncInfo.state_dir}
                 </code>
               </div>
               <div>
-                <span className="text-xs text-muted-foreground block mb-0.5">Database Size</span>
+                <span className="text-xs text-muted-foreground block mb-0.5">{t(language, 'settingsDbSize')}</span>
                 <span className="font-mono">{syncInfo.db_size_mb.toFixed(2)} MB</span>
               </div>
               <div>
-                <span className="text-xs text-muted-foreground block mb-0.5">Seed Records</span>
+                <span className="text-xs text-muted-foreground block mb-0.5">{t(language, 'settingsSeedRecords')}</span>
                 <span className="font-mono">{syncInfo.seed_count}</span>
               </div>
             </div>
 
             {/* Table row counts */}
             <div>
-              <span className="text-xs text-muted-foreground block mb-2">Tables</span>
+              <span className="text-xs text-muted-foreground block mb-2">{t(language, 'settingsTables')}</span>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {syncInfo.tables.map(t => (
                   <div key={t.name} className="bg-muted/30 rounded-lg px-3 py-2 flex items-center justify-between">
@@ -503,9 +609,10 @@ export default function SettingsPage() {
           </>
         ) : (
           <div className="h-32 flex items-center justify-center text-sm text-muted-foreground">
-            Loading...
+            {t(language, 'settingsLoading')}
           </div>
         )}
+        </div>
       </div>
       </>
       )}
@@ -615,17 +722,21 @@ export default function SettingsPage() {
       {activeTab === 'general' && (
       <>
       {/* Sync Controls */}
-      <div className="panel p-5 space-y-4">
-        <h2 className="text-sm font-medium flex items-center gap-2">
-          <RefreshCw size={14} className="text-success" /> Sync
-        </h2>
+      <div className="panel p-5 space-y-3 group">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium flex items-center gap-2">
+            <RefreshCw size={14} className="text-success" /> {t(language, 'settingsSyncTitle')}
+          </h2>
+          <span className="text-[10px] text-muted-foreground">{t(language, 'settingsHoverHint')}</span>
+        </div>
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-[1200px] group-hover:opacity-100">
         <p className="text-xs text-muted-foreground">
-          The dashboard syncs 14 JSON state files from the agent workspace into SQLite every 30 seconds.
+          {t(language, 'settingsSyncDescription')}
         </p>
         {syncInfo?.sync_health && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div className="rounded-lg border border-border/40 p-3">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Last Sync</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{t(language, 'settingsLastSync')}</div>
               <div className="mt-1 flex items-center gap-2">
                 <span className="font-mono">
                   {syncInfo.sync_health.last_sync_at ? timeAgo(syncInfo.sync_health.last_sync_at) : '—'}
@@ -641,21 +752,21 @@ export default function SettingsPage() {
                 )}
               </div>
               <div className="mt-1 text-muted-foreground">
-                Duration: {syncInfo.sync_health.last_sync_duration_ms ?? '—'} ms
+                {t(language, 'settingsDuration')}: {syncInfo.sync_health.last_sync_duration_ms ?? '—'} ms
               </div>
             </div>
             <div className="rounded-lg border border-border/40 p-3">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Last Success</div>
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">{t(language, 'settingsLastSuccess')}</div>
               <div className="mt-1 font-mono">
                 {syncInfo.sync_health.last_success_at ? timeAgo(syncInfo.sync_health.last_success_at) : '—'}
               </div>
               <div className="mt-1 text-muted-foreground">
-                Duration: {syncInfo.sync_health.last_success_duration_ms ?? '—'} ms
+                {t(language, 'settingsDuration')}: {syncInfo.sync_health.last_success_duration_ms ?? '—'} ms
               </div>
             </div>
             {syncInfo.sync_health.last_sync_error && (
               <div className="sm:col-span-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
-                Last error: {syncInfo.sync_health.last_sync_error}
+                {t(language, 'settingsLastError')}: {syncInfo.sync_health.last_sync_error}
               </div>
             )}
           </div>
@@ -667,7 +778,7 @@ export default function SettingsPage() {
             className="btn btn-primary text-sm flex items-center gap-2"
           >
             <RefreshCw size={14} className={syncing ? 'animate-spin' : ''} />
-            {syncing ? 'Syncing...' : 'Sync Now'}
+            {syncing ? t(language, 'settingsSyncing') : t(language, 'settingsSyncNow')}
           </button>
           <button
             onClick={clearSeeds}
@@ -675,79 +786,441 @@ export default function SettingsPage() {
             className="btn btn-destructive text-sm flex items-center gap-2"
           >
             <Trash2 size={14} />
-            {clearing ? 'Clearing...' : 'Clear Seed Data'}
+            {clearing ? t(language, 'settingsClearing') : t(language, 'settingsClearSeed')}
           </button>
+        </div>
+        </div>
+      </div>
+
+      <div className="panel p-5 space-y-3 group">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-medium">{t(language, 'mailSettingsTitle')}</h2>
+            <p className="text-xs text-muted-foreground">{t(language, 'mailSettingsSubtitle')}</p>
+          </div>
+          <span className="text-[10px] text-muted-foreground">{t(language, 'settingsHoverHint')}</span>
+        </div>
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-[1200px] group-hover:opacity-100">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="rounded-xl border border-border/40 p-4 space-y-3 bg-muted/10">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t(language, 'mailAccounts')}</div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium">office@aikitz.at</div>
+                    <div className="text-[11px] text-muted-foreground">{t(language, 'mailPrimary')}</div>
+                  </div>
+                  <span className="text-[10px] text-success">{t(language, 'settingsActive')}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-medium">support@aikitz.at</div>
+                    <div className="text-[11px] text-muted-foreground">{t(language, 'mailSupport')}</div>
+                  </div>
+                  <span className="text-[10px] text-success">{t(language, 'settingsActive')}</span>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-xl border border-border/40 p-4 space-y-3 bg-muted/10">
+              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t(language, 'mailServer')}</div>
+              <div className="grid grid-cols-1 gap-2">
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">{t(language, 'mailSmtp')}</div>
+                  <div className="text-sm font-medium">smtp.world4you.com</div>
+                  <div className="text-[11px] text-muted-foreground">{t(language, 'mailPortTls')}: 587</div>
+                </div>
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">{t(language, 'mailImap')}</div>
+                  <div className="text-sm font-medium">imap.world4you.com</div>
+                  <div className="text-[11px] text-muted-foreground">{t(language, 'mailPortSsl')}: 993</div>
+                </div>
+                <div className="rounded-lg border border-border/50 p-3">
+                  <div className="text-xs text-muted-foreground">{t(language, 'mailPop3')}</div>
+                  <div className="text-sm font-medium">pop3.world4you.com</div>
+                  <div className="text-[11px] text-muted-foreground">{t(language, 'mailPortSsl')}: 995</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end mt-3">
+            <button className="btn btn-primary btn-sm">{t(language, 'mailSaveChanges')}</button>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel p-5 space-y-3 group">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-medium flex items-center gap-2">
+              <KeyRound size={14} className="text-primary" /> {t(language, 'apiKeysTitle')}
+            </h2>
+            <p className="text-xs text-muted-foreground">{t(language, 'apiKeysSubtitle')}</p>
+          </div>
+          <span className="text-[10px] text-muted-foreground">{t(language, 'settingsHoverHint')}</span>
+        </div>
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-[1600px] group-hover:opacity-100">
+          <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+            <div className="space-y-4 rounded-xl border border-border/40 p-4 bg-muted/10">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label className="space-y-2">
+                  <span className="text-xs text-muted-foreground">{t(language, 'apiProvider')}</span>
+                  <select
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                    value={apiProvider}
+                    onChange={(e) => setApiProvider(e.target.value as ApiProvider)}
+                  >
+                    {providerOptions.map((provider) => (
+                      <option key={provider.value} value={provider.value}>{provider.label}</option>
+                    ))}
+                  </select>
+                </label>
+                <label className="space-y-2">
+                  <span className="text-xs text-muted-foreground">{t(language, 'apiModel')}</span>
+                  <input
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                    value={currentApiProfile.model}
+                    onChange={(e) => updateApiProfile('model', e.target.value)}
+                  />
+                </label>
+                <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs text-muted-foreground">{t(language, 'apiKey')}</span>
+                  <input
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                    type="password"
+                    value={currentApiProfile.key}
+                    onChange={(e) => updateApiProfile('key', e.target.value)}
+                  />
+                </label>
+                <label className="space-y-2 md:col-span-2">
+                  <span className="text-xs text-muted-foreground">{t(language, 'apiBaseUrl')}</span>
+                  <input
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                    value={currentApiProfile.baseUrl}
+                    onChange={(e) => updateApiProfile('baseUrl', e.target.value)}
+                  />
+                </label>
+                {(apiProvider === 'openai' || apiProvider === 'deepseek') && (
+                  <label className="space-y-2">
+                    <span className="text-xs text-muted-foreground">{t(language, 'apiOrganization')}</span>
+                    <input
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                      value={currentApiProfile.organization ?? ''}
+                      onChange={(e) => updateApiProfile('organization', e.target.value)}
+                    />
+                  </label>
+                )}
+                {(apiProvider === 'openai' || apiProvider === 'google') && (
+                  <label className="space-y-2">
+                    <span className="text-xs text-muted-foreground">{t(language, 'apiProject')}</span>
+                    <input
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                      value={currentApiProfile.project ?? ''}
+                      onChange={(e) => updateApiProfile('project', e.target.value)}
+                    />
+                  </label>
+                )}
+                {apiProvider === 'anthropic' && (
+                  <label className="space-y-2">
+                    <span className="text-xs text-muted-foreground">{t(language, 'apiWorkspace')}</span>
+                    <input
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                      value={currentApiProfile.workspace ?? ''}
+                      onChange={(e) => updateApiProfile('workspace', e.target.value)}
+                    />
+                  </label>
+                )}
+                {apiProvider === 'google' && (
+                  <label className="space-y-2">
+                    <span className="text-xs text-muted-foreground">{t(language, 'apiRegion')}</span>
+                    <input
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                      value={currentApiProfile.region ?? ''}
+                      onChange={(e) => updateApiProfile('region', e.target.value)}
+                    />
+                  </label>
+                )}
+                {apiProvider === 'openrouter' && (
+                  <label className="space-y-2 md:col-span-2">
+                    <span className="text-xs text-muted-foreground">{t(language, 'apiReferer')}</span>
+                    <input
+                      className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                      value={currentApiProfile.referer ?? ''}
+                      onChange={(e) => updateApiProfile('referer', e.target.value)}
+                    />
+                  </label>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                <Info size={12} />
+                <span>{t(language, 'apiKeysHint')}</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button className="btn btn-primary btn-sm">{t(language, 'apiSaveProfile')}</button>
+                <a
+                  className="btn btn-ghost btn-sm"
+                  href={providerOptions.find((provider) => provider.value === apiProvider)?.platform}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <ExternalLink size={14} /> {t(language, 'apiOpenPlatform')}
+                </a>
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-border/40 p-4 bg-muted/10">
+              <div className="flex items-center justify-between rounded-lg border border-border/40 p-3">
+                <div>
+                  <div className="text-xs text-muted-foreground">{t(language, 'apiHealth')}</div>
+                  <div className="text-sm font-medium">{providerOptions.find((provider) => provider.value === apiProvider)?.label}</div>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <span className={`h-2.5 w-2.5 rounded-full ${
+                    currentApiProfile.health === 'healthy'
+                      ? 'bg-success'
+                      : currentApiProfile.health === 'warning'
+                        ? 'bg-warning'
+                        : 'bg-destructive'
+                  }`} />
+                  <span>
+                    {currentApiProfile.health === 'healthy'
+                      ? t(language, 'apiStatusHealthy')
+                      : currentApiProfile.health === 'warning'
+                        ? t(language, 'apiStatusWarning')
+                        : t(language, 'apiStatusOffline')}
+                  </span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg border border-border/40 p-3">
+                  <div className="text-xs text-muted-foreground">{t(language, 'apiUsage')}</div>
+                  <div className="mt-1 font-medium">{currentApiProfile.usage}</div>
+                </div>
+                <div className="rounded-lg border border-border/40 p-3">
+                  <div className="text-xs text-muted-foreground">{t(language, 'apiCredits')}</div>
+                  <div className="mt-1 font-medium">{currentApiProfile.credits}</div>
+                </div>
+              </div>
+              <div className="rounded-lg border border-border/40 p-3 space-y-2">
+                <div className="text-xs text-muted-foreground">{t(language, 'apiPlatformUrl')}</div>
+                <a
+                  href={providerOptions.find((provider) => provider.value === apiProvider)?.platform}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-primary break-all inline-flex items-center gap-2"
+                >
+                  {providerOptions.find((provider) => provider.value === apiProvider)?.platform}
+                  <ExternalLink size={14} />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel p-5 space-y-3 group">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-medium">{t(language, 'openClawTitle')}</h2>
+            <p className="text-xs text-muted-foreground">{t(language, 'openClawSubtitle')}</p>
+          </div>
+          <span className="text-[10px] text-muted-foreground">{t(language, 'settingsHoverHint')}</span>
+        </div>
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-[1200px] group-hover:opacity-100">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              className={`btn btn-sm ${openClawEnabled ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={toggleOpenClaw}
+            >
+              {openClawEnabled ? t(language, 'openClawEnabled') : t(language, 'openClawDisabled')}
+            </button>
+            <div className="text-xs text-muted-foreground">{t(language, 'openClawMode')}</div>
+            <select
+              className="px-3 py-2 rounded-lg border border-border bg-background text-sm"
+              value={openClawMode}
+              onChange={(e) => setOpenClawMode(e.target.value as 'local' | 'vps')}
+            >
+              <option value="local">{t(language, 'openClawLocal')}</option>
+              <option value="vps">{t(language, 'openClawVps')}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel p-5 space-y-3 group">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-medium">{t(language, 'cliModuleTitle')}</h2>
+            <p className="text-xs text-muted-foreground">{t(language, 'cliModuleSubtitle')}</p>
+          </div>
+          <span className="text-[10px] text-muted-foreground">{t(language, 'settingsHoverHint')}</span>
+        </div>
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-[1400px] group-hover:opacity-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliApp')}</div>
+              <select
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                value={cliApp}
+                onChange={(e) => setCliApp(e.target.value)}
+              >
+                {cliApps.map((app) => (
+                  <option key={app} value={app}>{app}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliConnection')}</div>
+              <select
+                className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                value={cliConnection}
+                onChange={(e) => setCliConnection(e.target.value)}
+              >
+                {['Local', 'SSH', 'Docker', 'Kubernetes', 'GitHub Actions', 'GitLab CI'].map((method) => (
+                  <option key={method} value={method}>{method}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliEndpoint')}</div>
+              <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" value="https://api.aikitz.at" readOnly />
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliProfile')}</div>
+              <select className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
+                <option>production</option>
+                <option>staging</option>
+                <option>local</option>
+              </select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliToken')}</div>
+              <div className="flex items-center gap-2">
+                <input className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm" type="password" value="••••••••••" readOnly />
+                <button className="btn btn-ghost btn-sm">{t(language, 'cliGenerateToken')}</button>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2 mt-3">
+            <button className="btn btn-primary btn-sm" onClick={connectCli}>{t(language, 'cliConnect')}</button>
+            <button className="btn btn-ghost btn-sm" onClick={disconnectCli}>{t(language, 'cliDisconnect')}</button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+            <div className="rounded-xl border border-border/50 p-3 space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliActiveSessions')}</div>
+              {cliSessions.length === 0 ? (
+                <div className="text-xs text-muted-foreground">{t(language, 'cliNoSessions')}</div>
+              ) : (
+                cliSessions.map((session) => (
+                  <div key={session.id} className="flex items-center justify-between text-sm">
+                    <span>{session.app} · {session.connection}</span>
+                    <span className="text-[10px] text-muted-foreground">{t(language, 'settingsOnline')}</span>
+                  </div>
+                ))
+              )}
+            </div>
+            <div className="rounded-xl border border-border/50 p-3 space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliCommands')}</div>
+              {[
+                'aikitz status',
+                'aikitz sync --profile production',
+                'aikitz logs --tail 200',
+              ].map((cmd) => (
+                <div key={cmd} className="flex items-center justify-between gap-2">
+                  <code className="text-[11px] bg-muted/40 px-2 py-1 rounded">{cmd}</code>
+                  <button className="btn btn-ghost btn-xs">{t(language, 'cliCopy')}</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border border-border/50 p-3 mt-3">
+            <div className="text-xs text-muted-foreground mb-2">{t(language, 'cliConnectionMethods')}</div>
+            <div className="flex flex-wrap gap-2">
+              {['Local', 'SSH', 'Docker', 'Kubernetes', 'GitHub Actions', 'GitLab CI'].map((method) => (
+                <span key={method} className="px-2 py-0.5 rounded-full text-[10px] bg-muted/50 text-muted-foreground">
+                  {method}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Sync File Diagnostics */}
-      <div className="panel p-5 space-y-4">
-        <h2 className="text-sm font-medium flex items-center gap-2">
-          <Database size={14} className="text-info" /> Sync Diagnostics
-        </h2>
-        {syncInfo?.sync_files && syncInfo.sync_files.length > 0 ? (
-          <div className="overflow-auto">
-            <table className="w-full text-xs">
-              <thead>
-                <tr className="text-muted-foreground border-b border-border/40">
-                  <th className="text-left py-2 pr-2">File</th>
-                  <th className="text-left py-2 pr-2">Last Seen</th>
-                  <th className="text-left py-2 pr-2">File MTime</th>
-                  <th className="text-left py-2 pr-2">Size</th>
-                  <th className="text-left py-2 pr-2">Status</th>
-                  <th className="text-left py-2">Error</th>
-                </tr>
-              </thead>
-              <tbody>
-                {syncInfo.sync_files.map(file => (
-                  <tr key={file.filename} className="border-b border-border/20">
-                    <td className="py-2 pr-2 font-mono">{file.filename}</td>
-                    <td className="py-2 pr-2">{file.last_seen_at ? timeAgo(file.last_seen_at) : '—'}</td>
-                    <td className="py-2 pr-2">{file.last_mtime ? timeAgo(file.last_mtime) : '—'}</td>
-                    <td className="py-2 pr-2 font-mono">
-                      {typeof file.size_bytes === 'number' ? `${Math.round(file.size_bytes / 1024)} KB` : '—'}
-                    </td>
-                    <td className="py-2 pr-2">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide ${
-                        file.last_status === 'ok'
-                          ? 'bg-success/15 text-success'
-                          : file.last_status === 'missing'
-                            ? 'bg-warning/15 text-warning'
-                            : 'bg-destructive/15 text-destructive'
-                      }`}>
-                        {file.last_status || 'unknown'}
-                      </span>
-                    </td>
-                    <td className="py-2 text-muted-foreground">{file.last_error || '—'}</td>
+      <div className="panel p-5 space-y-3 group">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium flex items-center gap-2">
+            <Database size={14} className="text-info" /> {t(language, 'settingsSyncDiagnosticsTitle')}
+          </h2>
+          <span className="text-[10px] text-muted-foreground">{t(language, 'settingsHoverHint')}</span>
+        </div>
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-[1200px] group-hover:opacity-100">
+          {syncInfo?.sync_files && syncInfo.sync_files.length > 0 ? (
+            <div className="overflow-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-muted-foreground border-b border-border/40">
+                    <th className="text-left py-2 pr-2">{t(language, 'settingsFile')}</th>
+                    <th className="text-left py-2 pr-2">{t(language, 'settingsLastSeen')}</th>
+                    <th className="text-left py-2 pr-2">{t(language, 'settingsFileMtime')}</th>
+                    <th className="text-left py-2 pr-2">{t(language, 'settingsSize')}</th>
+                    <th className="text-left py-2 pr-2">{t(language, 'settingsStatus')}</th>
+                    <th className="text-left py-2">{t(language, 'settingsError')}</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-xs text-muted-foreground">No sync file telemetry yet.</div>
-        )}
+                </thead>
+                <tbody>
+                  {syncInfo.sync_files.map(file => (
+                    <tr key={file.filename} className="border-b border-border/20">
+                      <td className="py-2 pr-2 font-mono">{file.filename}</td>
+                      <td className="py-2 pr-2">{file.last_seen_at ? timeAgo(file.last_seen_at) : '—'}</td>
+                      <td className="py-2 pr-2">{file.last_mtime ? timeAgo(file.last_mtime) : '—'}</td>
+                      <td className="py-2 pr-2 font-mono">
+                        {typeof file.size_bytes === 'number' ? `${Math.round(file.size_bytes / 1024)} KB` : '—'}
+                      </td>
+                      <td className="py-2 pr-2">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide ${
+                          file.last_status === 'ok'
+                            ? 'bg-success/15 text-success'
+                            : file.last_status === 'missing'
+                              ? 'bg-warning/15 text-warning'
+                              : 'bg-destructive/15 text-destructive'
+                        }`}>
+                          {file.last_status || 'unknown'}
+                        </span>
+                      </td>
+                      <td className="py-2 text-muted-foreground">{file.last_error || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-xs text-muted-foreground">{t(language, 'settingsNoTelemetry')}</div>
+          )}
+        </div>
       </div>
 
       {/* Agent Configuration */}
-      <div className="panel p-5 space-y-4">
-        <h2 className="text-sm font-medium flex items-center gap-2">
-          <Shield size={14} className="text-warning" /> Agent Configuration
-        </h2>
-        <div className="space-y-2 text-xs">
-          <div className="flex items-center justify-between py-2 border-b border-border/30">
-            <span className="text-muted-foreground">Instances</span>
-            <span className="font-mono">{instances.length}</span>
-          </div>
-          <div className="flex items-center justify-between py-2 border-b border-border/30">
-            <span className="text-muted-foreground">Agent Discovery</span>
-            <span>Dynamic (from each instance OpenClaw config)</span>
-          </div>
-          <div className="flex items-center justify-between py-2">
-            <span className="text-muted-foreground">Notes</span>
-            <span className="text-muted-foreground">
-              Models, gateway, and cron wiring are defined by your OpenClaw deployment.
-            </span>
+      <div className="panel p-5 space-y-3 group">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium flex items-center gap-2">
+            <Shield size={14} className="text-warning" /> {t(language, 'settingsAgentConfigTitle')}
+          </h2>
+          <span className="text-[10px] text-muted-foreground">{t(language, 'settingsHoverHint')}</span>
+        </div>
+        <div className="max-h-0 overflow-hidden opacity-0 transition-all duration-300 group-hover:max-h-[1200px] group-hover:opacity-100">
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between py-2 border-b border-border/30">
+              <span className="text-muted-foreground">{t(language, 'settingsInstances')}</span>
+              <span className="font-mono">{instances.length}</span>
+            </div>
+            <div className="flex items-center justify-between py-2 border-b border-border/30">
+              <span className="text-muted-foreground">{t(language, 'settingsAgentDiscovery')}</span>
+              <span>{t(language, 'settingsAgentDiscoveryValue')}</span>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <span className="text-muted-foreground">{t(language, 'settingsNotes')}</span>
+              <span className="text-muted-foreground">{t(language, 'settingsAgentNotesValue')}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -1163,71 +1636,6 @@ export default function SettingsPage() {
       </div>
       </>
       )}
-        <div className="rounded-xl border border-border/40 p-4 space-y-4 bg-muted/10">
-          <div>
-            <div className="text-sm font-medium">{t(language, 'cliModuleTitle')}</div>
-            <div className="text-xs text-muted-foreground">{t(language, 'cliModuleSubtitle')}</div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <div className="text-xs text-muted-foreground">{t(language, 'cliEndpoint')}</div>
-              <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" value="https://api.aikitz.at" readOnly />
-            </div>
-            <div className="space-y-2">
-              <div className="text-xs text-muted-foreground">{t(language, 'cliProfile')}</div>
-              <select className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
-                <option>production</option>
-                <option>staging</option>
-                <option>local</option>
-              </select>
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              <div className="text-xs text-muted-foreground">{t(language, 'cliToken')}</div>
-              <div className="flex items-center gap-2">
-                <input className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm" type="password" value="••••••••••" readOnly />
-                <button className="btn btn-ghost btn-sm">{t(language, 'cliGenerateToken')}</button>
-              </div>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button className="btn btn-primary btn-sm">{t(language, 'cliConnect')}</button>
-            <button className="btn btn-ghost btn-sm">{t(language, 'cliDisconnect')}</button>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="rounded-xl border border-border/50 p-3 space-y-2">
-              <div className="text-xs text-muted-foreground">{t(language, 'cliActiveSessions')}</div>
-              {['macos-cli-01', 'ci-runner-02'].map((session) => (
-                <div key={session} className="flex items-center justify-between text-sm">
-                  <span>{session}</span>
-                  <span className="text-[10px] text-muted-foreground">online</span>
-                </div>
-              ))}
-            </div>
-            <div className="rounded-xl border border-border/50 p-3 space-y-2">
-              <div className="text-xs text-muted-foreground">{t(language, 'cliCommands')}</div>
-              {[
-                'aikitz status',
-                'aikitz sync --profile production',
-                'aikitz logs --tail 200',
-              ].map((cmd) => (
-                <div key={cmd} className="flex items-center justify-between gap-2">
-                  <code className="text-[11px] bg-muted/40 px-2 py-1 rounded">{cmd}</code>
-                  <button className="btn btn-ghost btn-xs">{t(language, 'cliCopy')}</button>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="rounded-xl border border-border/50 p-3">
-            <div className="text-xs text-muted-foreground mb-2">{t(language, 'cliConnectionMethods')}</div>
-            <div className="flex flex-wrap gap-2">
-              {['Local', 'SSH', 'Docker', 'Kubernetes', 'GitHub Actions', 'GitLab CI'].map((method) => (
-                <span key={method} className="px-2 py-0.5 rounded-full text-[10px] bg-muted/50 text-muted-foreground">
-                  {method}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
     </div>
   );
 }

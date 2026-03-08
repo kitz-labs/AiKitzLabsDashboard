@@ -18,17 +18,17 @@ export default function WhatsappPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="panel p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">Business Number</div>
-          <div className="text-sm font-medium">+43 1 234 5678</div>
+          <div className="text-xs text-muted-foreground">{t(language, 'whatsappBusinessNumber')}</div>
+          <div className="text-sm font-medium">+4367763690443</div>
           <div className="text-[11px] text-muted-foreground">Status: Connected</div>
         </div>
         <div className="panel p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">Templates</div>
+          <div className="text-xs text-muted-foreground">{t(language, 'whatsappTemplates')}</div>
           <div className="text-sm font-medium">38 approved</div>
           <div className="text-[11px] text-muted-foreground">Compliance: 100%</div>
         </div>
         <div className="panel p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">Automation</div>
+          <div className="text-xs text-muted-foreground">{t(language, 'whatsappAutomation')}</div>
           <div className="text-sm font-medium">12 active flows</div>
           <div className="text-[11px] text-muted-foreground">SLA: 4m avg response</div>
         </div>
@@ -36,7 +36,7 @@ export default function WhatsappPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-4">
         <div className="panel p-4 space-y-3">
-          <div className="text-sm font-medium">Live Conversations</div>
+          <div className="text-sm font-medium">{t(language, 'whatsappLiveConversations')}</div>
           <div className="space-y-2">
             {['Austrian Retail', 'Enterprise Sales', 'Support Tier 1', 'VIP Client'].map((name) => (
               <div key={name} className="rounded-xl border border-border/50 p-3 flex items-center gap-3">
@@ -54,7 +54,7 @@ export default function WhatsappPage() {
         </div>
 
         <div className="panel p-4 space-y-4">
-          <div className="text-sm font-medium">Automation Console</div>
+          <div className="text-sm font-medium">{t(language, 'whatsappAutomationConsole')}</div>
           <div className="space-y-2">
             <div className="rounded-xl border border-border/50 p-3 flex items-center gap-3">
               <Bot size={16} className="text-primary" />
@@ -82,9 +82,9 @@ export default function WhatsappPage() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="btn btn-primary btn-sm">Launch Campaign</button>
-            <button className="btn btn-ghost btn-sm">View Reports</button>
-            <button className="btn btn-ghost btn-sm"><PhoneCall size={14} /> Call</button>
+            <button className="btn btn-primary btn-sm">{t(language, 'whatsappLaunchCampaign')}</button>
+            <button className="btn btn-ghost btn-sm">{t(language, 'whatsappViewReports')}</button>
+            <button className="btn btn-ghost btn-sm"><PhoneCall size={14} /> {t(language, 'whatsappCall')}</button>
           </div>
         </div>
       </div>

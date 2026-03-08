@@ -1,10 +1,10 @@
 <div align="center">
 
-# Hermes Dashboard
+# AI Kitz Labs Dashboard
 
 **The open-source marketing operations control center for AI agent teams.**
 
-Run CRM, outreach, content, analytics, and automation workflows from one dashboard, powered by OpenClaw + SQLite.
+Run CRM, outreach, content, analytics, automation workflows, and the new in-app `Coding` control center from one dashboard, powered by OpenClaw + SQLite.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Next.js 16](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
@@ -12,23 +12,24 @@ Run CRM, outreach, content, analytics, and automation workflows from one dashboa
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
 
-![Hermes Dashboard Overview](./public/hermes-dashboard-mission-control.png)
+![AI Kitz Labs Dashboard Overview](./public/hermes-dashboard-mission-control.png)
 
 </div>
 
 ---
 
-> **Alpha Software** — Hermes Dashboard is under active development. APIs, data models, and configuration behavior can change between releases.
+> **Alpha Software** — AI Kitz Labs Dashboard is under active development. APIs, data models, and configuration behavior can change between releases.
 
-## Why Hermes Dashboard?
+## Why AI Kitz Labs Dashboard?
 
-Hermes is built for operator-led AI marketing systems where you need execution visibility and control, not disconnected tools.
+AI Kitz Labs Dashboard is built for operator-led AI marketing systems where you need execution visibility and control, not disconnected tools.
 
 - **Marketing system in one place** — CRM, outreach, content ops, analytics, experiments, and automations
 - **OpenClaw-native operations** — Dynamic agent/squad discovery, cron templates, workspace and comms surfaces
 - **Local-first stack** — Next.js + SQLite, no required external infra to run locally
 - **Secure-by-default template posture** — Session auth, API key support, host lock, and writeback controls disabled by default
 - **Production workflow support** — Deploy status, auditability, role-based access, and e2e-covered auth/API flows
+- **Integrated Coding control center** — Multi-agent app-development workspace with knowledge files, sessions, autosave, and approval-first planning
 
 ## Screenshots
 
@@ -45,8 +46,8 @@ Hermes is built for operator-led AI marketing systems where you need execution v
 > **Requires [pnpm](https://pnpm.io/installation)** — install with `npm install -g pnpm` or `corepack enable`.
 
 ```bash
-git clone https://github.com/builderz-labs/hermes-dashboard.git
-cd hermes-dashboard
+git clone https://github.com/kitz-labs/AiKitzLabsDashboard.git
+cd AiKitzLabsDashboard
 pnpm install
 pnpm env:bootstrap
 pnpm dev
@@ -55,6 +56,26 @@ pnpm dev
 Open `http://localhost:3000`.
 
 Initial admin access is seeded from `AUTH_USER` / `AUTH_PASS` on first run when the users table is empty.
+
+## Install Commands
+
+```bash
+corepack enable
+corepack prepare pnpm@latest --activate
+git clone https://github.com/kitz-labs/AiKitzLabsDashboard.git
+cd AiKitzLabsDashboard
+pnpm install
+pnpm env:bootstrap
+pnpm dev
+```
+
+## Coding Module
+
+- `Coding`: New app-internal development control center directly above `Settings`
+- `Agent`: Multi-agent selection including `GitHub Copilot`
+- `API`: Multiple provider selection with model and health overview
+- `Files`: Upload and index knowledge files for long-term app memory
+- `Sessions`: Restore, archive, and autosave development context every 30 minutes
 
 ## Project Status
 

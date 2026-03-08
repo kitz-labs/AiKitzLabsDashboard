@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   Search, Plus, Paperclip, Star, Clock, ShieldCheck, RefreshCw,
-  Mail, Inbox, Send, Archive, AlertCircle, Trash2, Tag,
+  Mail, Inbox, Send, Archive, AlertCircle, Trash2, Tag, Trash, Reply, ReplyAll,
 } from 'lucide-react';
 import { useDashboard } from '@/store';
 import { t } from '@/lib/i18n';
@@ -24,10 +24,11 @@ const mockThreads = Array.from({ length: 24 }).map((_, i) => ({
   id: i + 1,
   subject: `Q${i + 1} Client Update`,
   preview: 'Weekly status, performance highlights, and next steps for the account.',
-  from: i % 2 === 0 ? 'office@aikitz.at' : 'team@aikitz.at',
+  from: i % 2 === 0 ? 'office@aikitz.at' : 'partners@aikitz.at',
   time: `${8 + (i % 9)}:${(i * 7) % 60}`.padStart(2, '0'),
   unread: i % 3 === 0,
   tags: i % 2 === 0 ? ['VIP', 'Client'] : ['Internal'],
+  mailbox: i % 2 === 0 ? 'office@aikitz.at' : 'support@aikitz.at',
 }));
 
 export default function MailPage() {
@@ -63,12 +64,27 @@ export default function MailPage() {
             </button>
           </div>
         </div>
+        <div className="panel-body pt-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button className="btn btn-ghost btn-xs"><Reply size={12} /> {t(language, 'mailReply')}</button>
+            <button className="btn btn-ghost btn-xs"><ReplyAll size={12} /> {t(language, 'mailReplyAll')}</button>
+            <button className="btn btn-ghost btn-xs"><Send size={12} /> {t(language, 'mailSend')}</button>
+            <button className="btn btn-ghost btn-xs"><Trash size={12} /> {t(language, 'mailDelete')}</button>
+            <button className="btn btn-ghost btn-xs"><Archive size={12} /> {t(language, 'mailArchiveAction')}</button>
+            <button className="btn btn-ghost btn-xs"><Tag size={12} /> {t(language, 'mailLabelAction')}</button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[240px_360px_1fr_320px] gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-[240px_420px_1fr] gap-4">
         <aside className="panel p-4 space-y-4">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck size={14} className="text-success" /> {t(language, 'mailConnected')}
+          </div>
+          <div className="rounded-xl border border-border/50 p-3 space-y-1">
+            <div className="text-[11px] text-muted-foreground">{t(language, 'mailCombinedInbox')}</div>
+            <div className="text-sm font-medium">office@aikitz.at</div>
+            <div className="text-[11px] text-muted-foreground">support@aikitz.at</div>
           </div>
           <div className="space-y-1">
             {FOLDERS.map((folder, index) => {
@@ -122,6 +138,15 @@ export default function MailPage() {
               />
             </div>
           </div>
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span>{t(language, 'mailPrimaryTab')}</span>
+            <span>•</span>
+            <span>{t(language, 'mailSocialTab')}</span>
+            <span>•</span>
+            <span>{t(language, 'mailUpdatesTab')}</span>
+            <span>•</span>
+            <span>{t(language, 'mailPromotionsTab')}</span>
+          </div>
 
           <div className="space-y-2 max-h-[640px] overflow-y-auto">
             {filteredThreads.map(thread => (
@@ -137,6 +162,7 @@ export default function MailPage() {
                   <span className="text-[10px] text-muted-foreground">{thread.time}</span>
                 </div>
                 <div className="text-[11px] text-muted-foreground truncate">{thread.from}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{thread.mailbox}</div>
                 <div className="text-xs text-muted-foreground line-clamp-2 mt-1">{thread.preview}</div>
                 <div className="flex items-center gap-2 mt-2">
                   {thread.tags.map(tag => (
@@ -144,7 +170,7 @@ export default function MailPage() {
                       {tag}
                     </span>
                   ))}
-                  {thread.unread && <span className="text-[10px] text-primary">Unread</span>}
+                  {thread.unread && <span className="text-[10px] text-primary">{t(language, 'mailUnread')}</span>}
                 </div>
               </button>
             ))}
@@ -191,51 +217,6 @@ export default function MailPage() {
             </div>
           </div>
         </section>
-
-        <aside className="panel p-4 space-y-4">
-          <div className="text-sm font-medium">{t(language, 'mailAccount')}</div>
-          <div className="space-y-2">
-            <div className="text-xs text-muted-foreground">{t(language, 'mailServer')}</div>
-            <div className="grid grid-cols-1 gap-2">
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground">{t(language, 'mailSmtp')}</div>
-                <div className="text-sm font-medium">smtp.world4you.com</div>
-                <div className="text-[11px] text-muted-foreground">{t(language, 'mailPort')}: 587</div>
-              </div>
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground">{t(language, 'mailImap')}</div>
-                <div className="text-sm font-medium">imap.world4you.com</div>
-                <div className="text-[11px] text-muted-foreground">{t(language, 'mailPort')}: 993</div>
-              </div>
-              <div className="rounded-lg border border-border/50 p-3">
-                <div className="text-xs text-muted-foreground">{t(language, 'mailPop3')}</div>
-                <div className="text-sm font-medium">pop3.world4you.com</div>
-                <div className="text-[11px] text-muted-foreground">{t(language, 'mailPort')}: 995</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-xs text-muted-foreground">{t(language, 'mailUsername')}</div>
-            <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" value="office@aikitz.at" readOnly />
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-xs text-muted-foreground">{t(language, 'mailPassword')}</div>
-            <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" type="password" value="••••••••••" readOnly />
-          </div>
-
-          <div className="space-y-2">
-            <div className="text-xs text-muted-foreground">{t(language, 'mailEncryption')}</div>
-            <select className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
-              <option>TLS</option>
-              <option>SSL</option>
-              <option>STARTTLS</option>
-            </select>
-          </div>
-
-          <button className="btn btn-primary btn-sm w-full">{t(language, 'mailSave')}</button>
-        </aside>
       </div>
     </div>
   );

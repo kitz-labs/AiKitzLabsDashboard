@@ -21,8 +21,8 @@ export const metadata: Metadata = {
   title: "AI Kitz Labs Dashboard",
   description: "Open-source marketing operations control center for AI agent teams",
   icons: {
-    icon: "/logoheader.png",
-    apple: "/logoheader.png",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 

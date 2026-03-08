@@ -18,22 +18,22 @@ export default function TelegramPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         <div className="panel p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">Bots</div>
+          <div className="text-xs text-muted-foreground">{t(language, 'telegramBots')}</div>
           <div className="text-sm font-medium">7 active</div>
           <div className="text-[11px] text-muted-foreground">3 in review</div>
         </div>
         <div className="panel p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">Channels</div>
+          <div className="text-xs text-muted-foreground">{t(language, 'telegramChannels')}</div>
           <div className="text-sm font-medium">12 managed</div>
           <div className="text-[11px] text-muted-foreground">Growth +14%</div>
         </div>
         <div className="panel p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">Broadcasts</div>
+          <div className="text-xs text-muted-foreground">{t(language, 'telegramBroadcasts')}</div>
           <div className="text-sm font-medium">4 queued</div>
           <div className="text-[11px] text-muted-foreground">Next at 14:00</div>
         </div>
         <div className="panel p-4 space-y-2">
-          <div className="text-xs text-muted-foreground">Security</div>
+          <div className="text-xs text-muted-foreground">{t(language, 'telegramSecurity')}</div>
           <div className="text-sm font-medium">Verified</div>
           <div className="text-[11px] text-muted-foreground">TLS enforced</div>
         </div>
@@ -41,7 +41,7 @@ export default function TelegramPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-4">
         <div className="panel p-4 space-y-3">
-          <div className="text-sm font-medium">Channel Activity</div>
+          <div className="text-sm font-medium">{t(language, 'telegramChannelActivity')}</div>
           <div className="space-y-2">
             {['Product Updates', 'Investor Room', 'Community Hub', 'Support Alerts'].map((name) => (
               <div key={name} className="rounded-xl border border-border/50 p-3 flex items-center gap-3">
@@ -57,7 +57,7 @@ export default function TelegramPage() {
         </div>
 
         <div className="panel p-4 space-y-4">
-          <div className="text-sm font-medium">Bot Fleet</div>
+          <div className="text-sm font-medium">{t(language, 'telegramBotFleet')}</div>
           <div className="space-y-2">
             {['Lead Qualifier', 'Onboarding', 'Status Bot'].map((bot) => (
               <div key={bot} className="rounded-xl border border-border/50 p-3 flex items-center gap-3">
@@ -71,9 +71,9 @@ export default function TelegramPage() {
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <button className="btn btn-primary btn-sm"><Send size={14} /> Broadcast</button>
-            <button className="btn btn-ghost btn-sm">Analytics</button>
-            <button className="btn btn-ghost btn-sm">Settings</button>
+            <button className="btn btn-primary btn-sm"><Send size={14} /> {t(language, 'telegramBroadcast')}</button>
+            <button className="btn btn-ghost btn-sm">{t(language, 'telegramAnalytics')}</button>
+            <button className="btn btn-ghost btn-sm">{t(language, 'telegramSettings')}</button>
           </div>
         </div>
       </div>

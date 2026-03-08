@@ -33,7 +33,7 @@ export function HeaderBar() {
     <header className="fixed top-0 left-0 right-0 h-[var(--header-height)] bg-card/90 backdrop-blur-sm border-b border-border/70 flex items-center justify-between px-3 sm:px-4 z-50">
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-md bg-card border border-border/60 flex items-center justify-center overflow-hidden">
-          <Image src="/logoheader.png" alt="AI Kitz Labs" width={28} height={28} />
+          <Image src="/logo.png" alt="AI Kitz Labs" width={28} height={28} />
         </div>
         <span className="font-semibold text-sm tracking-tight">{t(language, 'brandName')}</span>
 

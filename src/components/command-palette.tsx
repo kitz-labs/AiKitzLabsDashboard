@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search, User, PenLine, Radio, FlaskConical, List,
-  Gauge, MessageCircle, Mail, BarChart3, LineChart, ArrowRight, BrainCircuit, Rocket, FolderOpen,
+  Gauge, MessageCircle, Mail, BarChart3, LineChart, ArrowRight, BrainCircuit, Rocket, FolderOpen, Code2, Settings,
 } from 'lucide-react';
 import { useDashboard } from '@/store';
 import { t } from '@/lib/i18n';
@@ -30,6 +30,8 @@ const getNavItems = (language: 'en' | 'de') => [
   { label: t(language, 'navMemory'), path: '/memory', icon: BrainCircuit },
   { label: t(language, 'navDeploy'), path: '/deploy', icon: Rocket },
   { label: t(language, 'navActivity'), path: '/activity', icon: List },
+  { label: t(language, 'navCoding'), path: '/coding', icon: Code2 },
+  { label: t(language, 'navSettings'), path: '/settings', icon: Settings },
   { label: t(language, 'navMail'), path: '/messenger/mail', icon: Mail },
   { label: t(language, 'navWhatsapp'), path: '/messenger/whatsapp', icon: MessageCircle },
   { label: t(language, 'navTelegram'), path: '/messenger/telegram', icon: MessageCircle },

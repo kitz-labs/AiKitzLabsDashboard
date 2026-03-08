@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
   Gauge, Bot, PenLine, MessageCircle, Mail, Contact, Zap,
   Search, BarChart3, LineChart, BrainCircuit, Rocket, Clock, List, Settings,
-  FolderOpen, Box, Wallet,
+  FolderOpen, Box, Wallet, Code2,
 } from 'lucide-react';
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
@@ -105,6 +105,7 @@ export function NavRail() {
   const pathname = usePathname();
   const realOnly = useDashboard(s => s.realOnly);
   const language = useDashboard(s => s.language);
+  const toggleLanguage = useDashboard(s => s.toggleLanguage);
   const navGroups = getNavGroups(language);
 
   const { data: counts } = useSmartPoll<NavCounts>(
@@ -116,7 +117,7 @@ export function NavRail() {
     <nav className="nav-rail fixed left-0 top-[var(--header-height)] bottom-0 w-[var(--nav-width)] bg-card/92 backdrop-blur-lg border-r border-border/70 z-40 hidden md:flex flex-col">
       <div className="px-3 py-3 border-b border-border/60 flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-card border border-border/60 flex items-center justify-center overflow-hidden">
-          <Image src="/logoheader.png" alt="AI Kitz Labs" width={32} height={32} />
+          <Image src="/logo.png" alt="AI Kitz Labs" width={32} height={32} />
         </div>
         <div className="min-w-0">
           <div className="text-sm font-semibold leading-none">{t(language, 'brandName')}</div>
@@ -173,19 +174,40 @@ export function NavRail() {
         })}
       </div>
 
-      <div className="px-2 py-2 border-t border-border/60">
-        <Link
-          href="/settings"
-          className={`relative w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${
-            pathname === '/settings'
-              ? 'bg-primary/14 text-primary'
-              : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/80'
-          }`}
+      <div className="px-2 py-2 border-t border-border/60 flex items-center gap-2">
+        <div className="flex-1 space-y-1">
+          <Link
+            href="/coding"
+            className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${
+              pathname.startsWith('/coding')
+                ? 'bg-primary/14 text-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/80'
+            }`}
+          >
+            {pathname.startsWith('/coding') && <span className="absolute left-0 w-0.5 h-5 bg-primary rounded-r" />}
+            <Code2 size={16} />
+            <span>{t(language, 'navCoding')}</span>
+          </Link>
+          <Link
+            href="/settings"
+            className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${
+              pathname === '/settings'
+                ? 'bg-primary/14 text-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/80'
+            }`}
+          >
+            {pathname === '/settings' && <span className="absolute left-0 w-0.5 h-5 bg-primary rounded-r" />}
+            <Settings size={16} />
+            <span>{t(language, 'navSettings')}</span>
+          </Link>
+        </div>
+        <button
+          className="h-8 px-2 rounded-lg border border-border/50 bg-muted/40 text-[10px] font-mono text-muted-foreground hover:text-foreground hover:bg-muted/70 transition-colors"
+          onClick={toggleLanguage}
+          title={t(language, 'language')}
         >
-          {pathname === '/settings' && <span className="absolute left-0 w-0.5 h-5 bg-primary rounded-r" />}
-          <Settings size={16} />
-          <span>{t(language, 'navSettings')}</span>
-        </Link>
+          {language.toUpperCase()}
+        </button>
       </div>
     </nav>
   );

@@ -120,7 +120,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm p-8 rounded-xl border border-[var(--border)] bg-[var(--card)]">
         <div className="text-center mb-8">
           <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center overflow-hidden">
-            <Image src="/logoheader.png" alt="AI Kitz Labs" width={48} height={48} />
+            <Image src="/logo.png" alt="AI Kitz Labs" width={48} height={48} />
           </div>
           <h1 className="text-xl font-semibold text-[var(--foreground)]">{t(language, 'loginTitle')}</h1>
           <p className="text-sm text-[var(--muted-foreground)] mt-1">{t(language, 'loginSubtitle')}</p>
