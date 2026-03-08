@@ -28,11 +28,13 @@ Fill in at least:
 - `AUTH_PASS`
 - `API_KEY`
 
+The real `ops/docker/kitz-dashboard.env` file stays on the VPS and is not committed to Git.
+
 ## 4. Start the app
 
 ```bash
 docker compose pull
-docker compose up -d
+docker compose up -d --force-recreate --remove-orphans
 ```
 
 This setup pulls a prebuilt GHCR image and runs the plain Next.js production server to keep VPS hosting simple.
@@ -42,6 +44,7 @@ This setup pulls a prebuilt GHCR image and runs the plain Next.js production ser
 ```bash
 docker compose ps
 docker compose logs -f dashboard
+docker inspect --format='{{json .State.Health}}' kitz-dashboard
 ```
 
 ## 6. Configure Nginx

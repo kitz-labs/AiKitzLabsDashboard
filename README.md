@@ -65,12 +65,13 @@ Initial admin access is seeded from `AUTH_USER` / `AUTH_PASS` on first run when 
 - Auto-deploy via GitHub Actions: [`ops/docker/github-actions-auto-deploy.md`](./ops/docker/github-actions-auto-deploy.md)
 
 The VPS Docker setup pulls the prebuilt image `ghcr.io/kitz-labs/aikitz-dashboard:latest` and runs standard Next.js production mode on port `3000`.
+The live production env file is `ops/docker/kitz-dashboard.env`; it stays local/on the VPS and is intentionally not committed to Git.
 
 ## Install Commands
 
 ```bash
 corepack enable
-corepack prepare pnpm@latest --activate
+corepack prepare pnpm@10.30.3 --activate
 git clone https://github.com/kitz-labs/AiKitzLabsDashboard.git
 cd AiKitzLabsDashboard
 pnpm install

@@ -29,7 +29,7 @@ The VPS must already have:
 
 - Docker installed
 - The repo cloned locally
-- `ops/docker/kitz-dashboard.env` filled out
+- `ops/docker/kitz-dashboard.env` filled out on the server with the live secrets
 - Access to pull `ghcr.io/kitz-labs/aikitz-dashboard:latest` (public package, or `docker login ghcr.io` if you keep it private)
 - Nginx or another proxy forwarding traffic to `127.0.0.1:3000`
 
