@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useDashboard } from '@/store';
 import { LiveFeed } from '@/components/live-feed';
+import { CodingAgentDock } from '@/components/chat/coding-agent-panel';
 import { t } from '@/lib/i18n';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -30,6 +31,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="pointer-events-none fixed bottom-3 left-1/2 z-30 -translate-x-1/2 rounded-full border border-border/50 bg-background/85 px-4 py-1.5 text-center text-[11px] text-muted-foreground shadow-lg backdrop-blur">
         {t(language, 'footerCredit')}
       </div>
+      <CodingAgentDock />
       <LiveFeed open={feedOpen} onClose={toggleFeed} />
     </>
   );

@@ -78,6 +78,9 @@ interface CodingState {
   dailyLearning: boolean;
   selectedActionItems: string[];
   suggestionsVersion: number;
+  agentDockOpen: boolean;
+  selectedCliModules: string[];
+  cliCommandDraft: string;
   fileChangeDraft: CodingFileChangeDraft;
 }
 
@@ -138,6 +141,9 @@ const defaultCodingState: CodingState = {
   dailyLearning: true,
   selectedActionItems: [],
   suggestionsVersion: 0,
+  agentDockOpen: false,
+  selectedCliModules: ['workspace', 'ssh'],
+  cliCommandDraft: '',
   fileChangeDraft: {
     filePath: 'src/app/coding/page.tsx',
     title: 'Improve Coding workspace UX',

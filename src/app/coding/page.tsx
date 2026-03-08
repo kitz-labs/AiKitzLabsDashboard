@@ -31,6 +31,7 @@ import { useDashboard } from '@/store';
 import { t, type TextKey } from '@/lib/i18n';
 import { timeAgo } from '@/lib/utils';
 import type { CodingApprovalPayload, CodingFileChangeApprovalPayload, CodingProvider, CodingProviderProfile, CodingWorkspaceState } from '@/types';
+import { CodingAgentPanel } from '@/components/chat/coding-agent-panel';
 
 type CodingFileHistory = {
   id: string;
@@ -1125,27 +1126,9 @@ export default function CodingPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs text-muted-foreground">{t(language, 'codingInputLabel')}</label>
-              <textarea
-                value={coding.promptDraft}
-                onChange={(e) => updateCoding({ promptDraft: e.target.value })}
-                placeholder={t(language, 'codingInputPlaceholder')}
-                className="w-full min-h-[180px] rounded-2xl border border-border bg-background px-4 py-3 text-sm"
-              />
-            </div>
+            <CodingAgentPanel variant="workspace" />
 
-            <div className="grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-4">
-              <div className="rounded-xl border border-border/40 bg-background/80 p-4 space-y-3">
-                <div className="text-sm font-medium flex items-center gap-2">
-                  <Cpu size={15} className="text-primary" /> {t(language, 'codingExecutionPreview')}
-                </div>
-                <p className="text-sm text-muted-foreground">{t(language, 'codingExecutionPreviewBody')}</p>
-                <div className="rounded-lg border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-warning flex items-center gap-2">
-                  <AlertTriangle size={13} /> {t(language, 'codingApprovalRequired')}
-                </div>
-              </div>
-
+            <div className="grid grid-cols-1 xl:grid-cols-[1fr] gap-4">
               <div className="rounded-xl border border-border/40 bg-background/80 p-4 space-y-3">
                 <div className="flex items-center justify-between gap-3">
                   <div className="text-sm font-medium flex items-center gap-2">
