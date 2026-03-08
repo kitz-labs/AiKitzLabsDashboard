@@ -56,7 +56,7 @@ After a successful push to `main`, the workflow:
 1. Opens an SSH connection to the VPS
 2. Changes into `VPS_APP_DIR`
 3. Fetches and hard-resets to `origin/main`
-4. Pulls the latest GHCR-backed image via `bash ops/docker/deploy.sh`
+4. Pulls the latest GHCR-backed image via `bash ops/docker/deploy.sh`, which passes `ops/docker/kitz-dashboard.env` explicitly to Compose
 5. Checks that `http://127.0.0.1:3000` responds
 
 ## Manual deploy

@@ -33,8 +33,8 @@ The real `ops/docker/kitz-dashboard.env` file stays on the VPS and is not commit
 ## 4. Start the app
 
 ```bash
-docker compose pull
-docker compose up -d --force-recreate --remove-orphans
+docker compose --env-file ops/docker/kitz-dashboard.env pull
+docker compose --env-file ops/docker/kitz-dashboard.env up -d --force-recreate --remove-orphans
 ```
 
 This setup pulls a prebuilt GHCR image and runs the plain Next.js production server to keep VPS hosting simple.
@@ -42,8 +42,8 @@ This setup pulls a prebuilt GHCR image and runs the plain Next.js production ser
 ## 5. Check status
 
 ```bash
-docker compose ps
-docker compose logs -f dashboard
+docker compose --env-file ops/docker/kitz-dashboard.env ps
+docker compose --env-file ops/docker/kitz-dashboard.env logs -f dashboard
 docker inspect --format='{{json .State.Health}}' kitz-dashboard
 ```
 

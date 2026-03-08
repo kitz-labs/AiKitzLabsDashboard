@@ -40,6 +40,8 @@ Or use the included helper:
 bash ops/docker/deploy.sh
 ```
 
+The helper passes `ops/docker/kitz-dashboard.env` explicitly via `docker compose --env-file`, so the VPS deploy uses the live server env file directly.
+
 If GHCR ever asks for authentication on the server, log in once first:
 
 ```bash
@@ -90,9 +92,9 @@ For later updates on the server:
 
 ```bash
 git pull --ff-only
-docker compose pull
-docker compose up -d --force-recreate --remove-orphans
-docker compose logs -f dashboard
+docker compose --env-file ops/docker/kitz-dashboard.env pull
+docker compose --env-file ops/docker/kitz-dashboard.env up -d --force-recreate --remove-orphans
+docker compose --env-file ops/docker/kitz-dashboard.env logs -f dashboard
 ```
 
 Or simply:
