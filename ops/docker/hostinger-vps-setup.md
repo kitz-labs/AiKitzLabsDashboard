@@ -60,3 +60,21 @@ sudo certbot --nginx -d dashboard.example.com
 ```bash
 bash ops/docker/deploy.sh
 ```
+
+## 9. Optional: GitHub Actions auto-deploy
+
+The repo includes an auto-deploy workflow at:
+
+- `.github/workflows/deploy-vps.yml`
+
+Add these GitHub repository secrets:
+
+- `VPS_HOST`
+- `VPS_USER`
+- `VPS_PORT`
+- `VPS_SSH_KEY`
+- `VPS_APP_DIR`
+
+Full setup notes live in:
+
+- `ops/docker/github-actions-auto-deploy.md`

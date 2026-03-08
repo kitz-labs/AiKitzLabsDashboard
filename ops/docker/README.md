@@ -72,6 +72,7 @@ An example Nginx server block is included in:
 Complete VPS setup steps live in:
 
 - `ops/docker/hostinger-vps-setup.md`
+- `ops/docker/github-actions-auto-deploy.md`
 
 ## Update flow
 
@@ -95,3 +96,4 @@ bash ops/docker/deploy.sh
 - `docker compose ps` to verify the container is up
 - `curl http://127.0.0.1:3000` on the VPS to verify the app before checking Nginx
 - If Nginx returns `502`, verify the container actually built and is listening on `3000`
+- If GitHub auto-deploy fails, inspect `.github/workflows/deploy-vps.yml` and the Actions logs

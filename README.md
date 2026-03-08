@@ -62,6 +62,7 @@ Initial admin access is seeded from `AUTH_USER` / `AUTH_PASS` on first run when 
 - Docker Compose: [`docker-compose.yml`](./docker-compose.yml)
 - Full VPS guide: [`ops/docker/hostinger-vps-setup.md`](./ops/docker/hostinger-vps-setup.md)
 - Docker deploy notes: [`ops/docker/README.md`](./ops/docker/README.md)
+- Auto-deploy via GitHub Actions: [`ops/docker/github-actions-auto-deploy.md`](./ops/docker/github-actions-auto-deploy.md)
 
 ## Install Commands
 
