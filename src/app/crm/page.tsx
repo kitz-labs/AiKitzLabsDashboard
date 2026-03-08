@@ -13,6 +13,7 @@ import {
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
 import { timeAgo } from '@/lib/utils';
+import { t } from '@/lib/i18n';
 import type { Lead, FunnelStep } from '@/types';
 import { LeadDetailPanel } from '@/components/crm/lead-detail-panel';
 
@@ -142,7 +143,7 @@ export default function CrmPage() {
   const [role, setRole] = useState<Role>('viewer');
   const [slaStaleDays, setSlaStaleDays] = useState(7);
   const [slaNewDays, setSlaNewDays] = useState(3);
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -345,7 +346,7 @@ export default function CrmPage() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-semibold">CRM</h1>
+          <h1 className="text-xl font-semibold">{t(language, 'titleCRM')}</h1>
           {canEdit && (
             <button className="btn btn-primary btn-sm" onClick={() => setCreateOpen(true)}>
               Add Lead

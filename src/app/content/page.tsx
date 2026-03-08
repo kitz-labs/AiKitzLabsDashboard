@@ -9,6 +9,7 @@ import { Check, X } from 'lucide-react';
 import { toast } from '@/components/ui/toast';
 import { useDashboard } from '@/store';
 import type { ContentPost } from '@/types';
+import { t } from '@/lib/i18n';
 
 type Tab = 'queue' | 'calendar' | 'metrics';
 
@@ -16,7 +17,7 @@ export default function ContentPage() {
   const [posts, setPosts] = useState<ContentPost[]>([]);
   const [tab, setTab] = useState<Tab>('queue');
   const [filter, setFilter] = useState<string>('');
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
 
   const load = useCallback(() => {
     const params = new URLSearchParams();
@@ -48,7 +49,7 @@ export default function ContentPage() {
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Content</h1>
+        <h1 className="text-xl font-semibold">{t(language, 'titleContent')}</h1>
         <select
           className="px-3"
           value={filter}

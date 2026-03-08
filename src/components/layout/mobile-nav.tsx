@@ -7,10 +7,11 @@ import {
   Gauge, Bot, Mail, Contact, MoreHorizontal,
   PenLine, MessageCircle, Zap, FlaskConical, Search,
   BarChart3, LineChart, BrainCircuit, Rocket, Clock, List, Settings,
-  FolderOpen,
+  FolderOpen, Box, Wallet,
 } from 'lucide-react';
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
+import { t } from '@/lib/i18n';
 
 interface NavCounts {
   content: number;
@@ -35,38 +36,71 @@ interface NavGroup {
   items: NavItem[];
 }
 
-const NAV_GROUPS: NavGroup[] = [
+const getNavGroups = (language: 'en' | 'de'): NavGroup[] => [
   {
-    label: 'Core',
+    label: t(language, 'navCore'),
     items: [
-      { href: '/', label: 'Overview', icon: Gauge, priority: true },
-      { href: '/agents/squads', label: 'Squads', icon: Bot, priority: true },
-      { href: '/outreach', label: 'Outreach', icon: Mail, countKey: 'outreach', priority: true },
-      { href: '/crm', label: 'CRM', icon: Contact, countKey: 'new_leads', priority: true },
+      { href: '/', label: t(language, 'navOverview'), icon: Gauge, priority: true },
+      { href: '/agents/squads', label: t(language, 'navSquads'), icon: Bot, priority: true },
+      { href: '/outreach', label: t(language, 'navOutreach'), icon: Mail, countKey: 'outreach', priority: true },
+      { href: '/crm', label: t(language, 'navCRM'), icon: Contact, countKey: 'new_leads', priority: true },
     ],
   },
   {
-    label: 'Operate',
+    label: t(language, 'navOperate'),
     items: [
-      { href: '/agents/comms', label: 'Comms', icon: MessageCircle },
-      { href: '/agents/workspace', label: 'Workspace', icon: FolderOpen },
-      { href: '/content', label: 'Content', icon: PenLine, countKey: 'content' },
-      { href: '/engagement', label: 'Engagement', icon: MessageCircle },
-      { href: '/automations', label: 'Automations', icon: Zap, countKey: 'outreach' },
-      { href: '/experiments', label: 'Experiments', icon: FlaskConical },
+      { href: '/agents/comms', label: t(language, 'navComms'), icon: MessageCircle },
+      { href: '/agents/workspace', label: t(language, 'navWorkspace'), icon: FolderOpen },
+      { href: '/content', label: t(language, 'navContent'), icon: PenLine, countKey: 'content' },
+      { href: '/engagement', label: t(language, 'navEngagement'), icon: MessageCircle },
+      { href: '/automations', label: t(language, 'navAutomations'), icon: Zap, countKey: 'outreach' },
+      { href: '/experiments', label: t(language, 'navExperiments'), icon: FlaskConical },
     ],
   },
   {
-    label: 'Observe',
+    label: t(language, 'navObserve'),
     items: [
-      { href: '/research', label: 'Research', icon: Search, countKey: 'signals_today' },
-      { href: '/kpis', label: 'KPIs', icon: BarChart3 },
-      { href: '/analytics', label: 'Analytics', icon: LineChart },
-      { href: '/memory', label: 'Memory', icon: BrainCircuit },
-      { href: '/deploy', label: 'Deploy', icon: Rocket },
-      { href: '/cron', label: 'Cron', icon: Clock },
-      { href: '/activity', label: 'Activity', icon: List },
-      { href: '/settings', label: 'Settings', icon: Settings },
+      { href: '/research', label: t(language, 'navResearch'), icon: Search, countKey: 'signals_today' },
+      { href: '/kpis', label: t(language, 'navKPIs'), icon: BarChart3 },
+      { href: '/analytics', label: t(language, 'navAnalytics'), icon: LineChart },
+      { href: '/memory', label: t(language, 'navMemory'), icon: BrainCircuit },
+      { href: '/deploy', label: t(language, 'navDeploy'), icon: Rocket },
+      { href: '/cron', label: t(language, 'navCron'), icon: Clock },
+      { href: '/activity', label: t(language, 'navActivity'), icon: List },
+      { href: '/settings', label: t(language, 'navSettings'), icon: Settings },
+    ],
+  },
+  {
+    label: t(language, 'navManagement'),
+    items: [
+      { href: '/management/kunden', label: t(language, 'navCustomers'), icon: Contact },
+      { href: '/management/produkte', label: t(language, 'navProducts'), icon: Box },
+      { href: '/management/finanzen', label: t(language, 'navFinance'), icon: Wallet },
+      { href: '/management/stripe', label: t(language, 'navStripe'), icon: Wallet },
+    ],
+  },
+  {
+    label: t(language, 'navMessenger'),
+    items: [
+      { href: '/messenger/mail', label: t(language, 'navMail'), icon: Mail },
+      { href: '/messenger/whatsapp', label: t(language, 'navWhatsapp'), icon: MessageCircle },
+      { href: '/messenger/telegram', label: t(language, 'navTelegram'), icon: MessageCircle },
+    ],
+  },
+  {
+    label: t(language, 'navWebsite'),
+    items: [
+      { href: '/webseite/webseiten', label: t(language, 'navWebsites'), icon: FolderOpen },
+      { href: '/webseite/instagram', label: t(language, 'navInstagram'), icon: MessageCircle },
+      { href: '/webseite/facebook', label: t(language, 'navFacebook'), icon: MessageCircle },
+      { href: '/webseite/linkedin', label: t(language, 'navLinkedIn'), icon: MessageCircle },
+    ],
+  },
+  {
+    label: t(language, 'navFiles'),
+    items: [
+      { href: '/files/csv', label: t(language, 'navCsv'), icon: List },
+      { href: '/files/md', label: t(language, 'navMd'), icon: List },
     ],
   },
 ];
@@ -76,6 +110,8 @@ export function MobileNav() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
   const realOnly = useDashboard(s => s.realOnly);
+  const language = useDashboard(s => s.language);
+  const navGroups = useMemo(() => getNavGroups(language), [language]);
 
   const { data: counts } = useSmartPoll<NavCounts>(
     () => fetch(`/api/counts${realOnly ? '?real=true' : ''}`).then(r => r.json()),
@@ -83,18 +119,18 @@ export function MobileNav() {
   );
 
   const priorityItems = useMemo(
-    () => NAV_GROUPS.flatMap(g => g.items).filter(i => i.priority),
-    [],
+    () => navGroups.flatMap(g => g.items).filter(i => i.priority),
+    [navGroups],
   );
   const nonPriorityItems = useMemo(
-    () => NAV_GROUPS.flatMap(g => g.items).filter(i => !i.priority),
-    [],
+    () => navGroups.flatMap(g => g.items).filter(i => !i.priority),
+    [navGroups],
   );
   const sheetGroups = useMemo(
-    () => NAV_GROUPS
+    () => navGroups
       .map(group => ({ ...group, items: group.items.filter(i => !i.priority) }))
       .filter(group => group.items.length > 0),
-    [],
+    [navGroups],
   );
   const moreActive = nonPriorityItems.some(i => isActive(pathname, i.href));
   const moreBadge = counts ? (counts.content + counts.total_pending) : 0;
@@ -144,7 +180,7 @@ export function MobileNav() {
             }`}
           >
             <MoreHorizontal size={17} />
-            <span className="text-[10px] leading-none">More</span>
+            <span className="text-[10px] leading-none">{t(language, 'navMore')}</span>
             {moreBadge > 0 && (
               <span className="absolute top-0.5 right-1 min-w-[14px] h-3.5 px-0.5 text-[8px] font-bold rounded-full count-badge flex items-center justify-center">
                 {moreBadge > 99 ? '99+' : moreBadge}

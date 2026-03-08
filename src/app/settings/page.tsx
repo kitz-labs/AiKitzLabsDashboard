@@ -9,6 +9,8 @@ import { toast } from '@/components/ui/toast';
 import { timeAgo } from '@/lib/utils';
 import { getRoleMatrix } from '@/lib/rbac';
 import pkg from '../../../package.json';
+import { useDashboard } from '@/store';
+import { t } from '@/lib/i18n';
 
 interface SyncInfo {
   db_path: string;
@@ -108,6 +110,7 @@ interface MemoryEffectPayload {
 }
 
 export default function SettingsPage() {
+  const { language, toggleLanguage } = useDashboard();
   const dashboardVersion = pkg.version || 'dev';
   const roleMatrix = getRoleMatrix();
   const [instances, setInstances] = useState<HermesInstance[]>([]);
@@ -414,10 +417,17 @@ export default function SettingsPage() {
       <div className="panel">
         <div className="panel-header">
           <h1 className="text-2xl font-semibold flex items-center gap-2">
-            <Settings size={20} /> Settings
+            <Settings size={20} /> {t(language, 'titleSettings')}
+            <button
+              className="ml-2 h-7 flex items-center gap-1.5 px-2.5 rounded-md text-[11px] font-medium transition-colors bg-muted/50 text-muted-foreground hover:bg-muted border border-border/30"
+              onClick={toggleLanguage}
+              title={t(language, 'language')}
+            >
+              <span className="font-mono text-[10px]">{language.toUpperCase()}</span>
+            </button>
           </h1>
           <p className="text-sm text-muted-foreground">
-            Configure sync, memory policies, access controls, and workspace runtime details.
+            {t(language, 'settingsSubtitle')}
           </p>
         </div>
         <div className="panel-body">
@@ -1153,6 +1163,71 @@ export default function SettingsPage() {
       </div>
       </>
       )}
+        <div className="rounded-xl border border-border/40 p-4 space-y-4 bg-muted/10">
+          <div>
+            <div className="text-sm font-medium">{t(language, 'cliModuleTitle')}</div>
+            <div className="text-xs text-muted-foreground">{t(language, 'cliModuleSubtitle')}</div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliEndpoint')}</div>
+              <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" value="https://api.aikitz.at" readOnly />
+            </div>
+            <div className="space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliProfile')}</div>
+              <select className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
+                <option>production</option>
+                <option>staging</option>
+                <option>local</option>
+              </select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliToken')}</div>
+              <div className="flex items-center gap-2">
+                <input className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm" type="password" value="••••••••••" readOnly />
+                <button className="btn btn-ghost btn-sm">{t(language, 'cliGenerateToken')}</button>
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button className="btn btn-primary btn-sm">{t(language, 'cliConnect')}</button>
+            <button className="btn btn-ghost btn-sm">{t(language, 'cliDisconnect')}</button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="rounded-xl border border-border/50 p-3 space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliActiveSessions')}</div>
+              {['macos-cli-01', 'ci-runner-02'].map((session) => (
+                <div key={session} className="flex items-center justify-between text-sm">
+                  <span>{session}</span>
+                  <span className="text-[10px] text-muted-foreground">online</span>
+                </div>
+              ))}
+            </div>
+            <div className="rounded-xl border border-border/50 p-3 space-y-2">
+              <div className="text-xs text-muted-foreground">{t(language, 'cliCommands')}</div>
+              {[
+                'aikitz status',
+                'aikitz sync --profile production',
+                'aikitz logs --tail 200',
+              ].map((cmd) => (
+                <div key={cmd} className="flex items-center justify-between gap-2">
+                  <code className="text-[11px] bg-muted/40 px-2 py-1 rounded">{cmd}</code>
+                  <button className="btn btn-ghost btn-xs">{t(language, 'cliCopy')}</button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-xl border border-border/50 p-3">
+            <div className="text-xs text-muted-foreground mb-2">{t(language, 'cliConnectionMethods')}</div>
+            <div className="flex flex-wrap gap-2">
+              {['Local', 'SSH', 'Docker', 'Kubernetes', 'GitHub Actions', 'GitLab CI'].map((method) => (
+                <span key={method} className="px-2 py-0.5 rounded-full text-[10px] bg-muted/50 text-muted-foreground">
+                  {method}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
     </div>
   );
 }

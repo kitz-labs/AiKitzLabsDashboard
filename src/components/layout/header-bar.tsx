@@ -4,10 +4,12 @@ import {
   Activity, Search, Sun, Moon, Radio, PenLine, Mail, Users, LogOut,
   Bell, Eye, EyeOff, Check, CheckCheck,
 } from 'lucide-react';
+import Image from 'next/image';
 import { useTheme } from 'next-themes';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDashboard } from '@/store';
+import { t } from '@/lib/i18n';
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { timeAgo } from '@/lib/utils';
 import type { Notification } from '@/types';
@@ -19,7 +21,7 @@ interface HeaderStats {
 }
 
 export function HeaderBar() {
-  const { feedOpen, toggleFeed, realOnly, toggleRealOnly } = useDashboard();
+  const { feedOpen, toggleFeed, realOnly, toggleRealOnly, language } = useDashboard();
 
   // Lightweight poll for header stats
   const { data: stats } = useSmartPoll<HeaderStats>(
@@ -30,25 +32,25 @@ export function HeaderBar() {
   return (
     <header className="fixed top-0 left-0 right-0 h-[var(--header-height)] bg-card/90 backdrop-blur-sm border-b border-border/70 flex items-center justify-between px-3 sm:px-4 z-50">
       <div className="flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-md bg-primary/20 flex items-center justify-center">
-          <span className="text-primary font-bold text-xs">H</span>
+        <div className="w-7 h-7 rounded-md bg-card border border-border/60 flex items-center justify-center overflow-hidden">
+          <Image src="/logoheader.png" alt="AI Kitz Labs" width={28} height={28} />
         </div>
-        <span className="font-semibold text-sm tracking-tight">Hermes</span>
+        <span className="font-semibold text-sm tracking-tight">{t(language, 'brandName')}</span>
 
         {/* Quick stats — hidden on small screens */}
         {stats && (
           <div className="hidden lg:flex items-center gap-2.5 ml-2.5 pl-2.5 border-l border-border/30">
-            <QuickStat icon={PenLine} value={stats.posts_today} label="posts" />
-            <QuickStat icon={Mail} value={stats.emails_sent} label="sent" />
-            <QuickStat icon={Users} value={stats.pipeline_count} label="pipeline" />
+            <QuickStat icon={PenLine} value={stats.posts_today} label={t(language, 'labelPosts')} />
+            <QuickStat icon={Mail} value={stats.emails_sent} label={t(language, 'labelSent')} />
+            <QuickStat icon={Users} value={stats.pipeline_count} label={t(language, 'labelPipeline')} />
           </div>
         )}
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
-        <SeedToggle active={realOnly} onToggle={toggleRealOnly} />
-        <SearchTrigger />
-        <NotificationBell />
+        <SeedToggle active={realOnly} onToggle={toggleRealOnly} language={language} />
+        <SearchTrigger language={language} />
+        <NotificationBell language={language} />
         <ThemeToggle />
         <FeedToggle open={feedOpen} onToggle={toggleFeed} />
         <SyncStatus />
@@ -68,7 +70,7 @@ function QuickStat({ icon: Icon, value, label }: { icon: typeof PenLine; value: 
   );
 }
 
-function SeedToggle({ active, onToggle }: { active: boolean; onToggle: () => void }) {
+function SeedToggle({ active, onToggle, language }: { active: boolean; onToggle: () => void; language: 'en' | 'de' }) {
   return (
     <button
       className={`h-7 flex items-center gap-1.5 px-2.5 rounded-md text-[11px] font-medium transition-colors ${
@@ -77,15 +79,15 @@ function SeedToggle({ active, onToggle }: { active: boolean; onToggle: () => voi
           : 'bg-muted/50 text-muted-foreground hover:bg-muted border border-border/30'
       }`}
       onClick={onToggle}
-      title={active ? 'Showing real data only' : 'Showing all data (including seeded)'}
+      title={active ? t(language, 'titleRealOnly') : t(language, 'titleAllData')}
     >
       {active ? <Eye size={13} /> : <EyeOff size={13} />}
-      <span className="hidden sm:inline">{active ? 'Real' : 'All'}</span>
+      <span className="hidden sm:inline">{active ? t(language, 'real') : t(language, 'all')}</span>
     </button>
   );
 }
 
-function NotificationBell() {
+function NotificationBell({ language }: { language: 'en' | 'de' }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const realOnly = useDashboard(s => s.realOnly);
@@ -138,7 +140,7 @@ function NotificationBell() {
         open ? 'bg-primary/15 text-primary' : 'hover:bg-muted text-muted-foreground hover:text-foreground'
       }`}
         onClick={() => setOpen(!open)}
-        title="Notifications"
+        title={t(language, 'notifications')}
       >
         <Bell size={16} />
         {unreadCount > 0 && (
@@ -151,13 +153,13 @@ function NotificationBell() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 card border shadow-lg max-h-96 overflow-hidden flex flex-col animate-slide-in z-50">
           <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/30">
-            <span className="text-sm font-medium">Notifications</span>
+            <span className="text-sm font-medium">{t(language, 'notifications')}</span>
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}
                 className="flex items-center gap-1 text-[10px] text-primary hover:underline"
               >
-                <CheckCheck size={12} /> Mark all read
+                <CheckCheck size={12} /> {t(language, 'markAllRead')}
               </button>
             )}
           </div>
@@ -166,7 +168,7 @@ function NotificationBell() {
             {(!notifications || notifications.length === 0) ? (
               <div className="p-6 text-center text-sm text-muted-foreground">
                 <Bell size={24} className="mx-auto mb-2 opacity-30" />
-                No notifications yet
+                {t(language, 'noNotifications')}
               </div>
             ) : (
               notifications.map(n => (
@@ -192,7 +194,7 @@ function NotificationBell() {
                             onClick={() => markRead(n.id)}
                             className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
                           >
-                            <Check size={10} /> Read
+                            <Check size={10} /> {t(language, 'read')}
                           </button>
                         )}
                       </div>
@@ -208,14 +210,14 @@ function NotificationBell() {
   );
 }
 
-function SearchTrigger() {
+function SearchTrigger({ language }: { language: 'en' | 'de' }) {
   return (
     <button
       className="hidden md:flex items-center gap-2 h-7 px-3 rounded-md bg-muted/55 hover:bg-muted border border-border/30 text-xs text-muted-foreground transition-colors"
       onClick={() => window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }))}
     >
       <Search size={13} />
-      <span className="hidden sm:inline">Search</span>
+      <span className="hidden sm:inline">{t(language, 'search')}</span>
       <kbd className="hidden sm:inline text-[10px] bg-muted px-1 py-0.5 rounded ml-1">⌘K</kbd>
     </button>
   );

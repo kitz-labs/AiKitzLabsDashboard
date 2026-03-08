@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { TrendChart } from '@/components/ui/trend-chart';
 import { useDashboard } from '@/store';
 import type { DailyMetrics, WeeklyKPI } from '@/types';
+import { t } from '@/lib/i18n';
 
 // 90-day targets from the plan
 const TARGETS = {
@@ -18,6 +19,7 @@ const TARGETS = {
 export default function KPIsPage() {
   const [daily, setDaily] = useState<DailyMetrics[]>([]);
   const [weekly, setWeekly] = useState<WeeklyKPI[]>([]);
+  const { language } = useDashboard();
   const { realOnly } = useDashboard();
 
   useEffect(() => {
@@ -35,7 +37,7 @@ export default function KPIsPage() {
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-semibold">KPIs</h1>
+        <h1 className="text-xl font-semibold">{t(language, 'titleKPIs')}</h1>
         <div className="text-xs text-muted-foreground">
           Weeks tracked <span className="font-mono text-foreground">{weekly.length}</span>
         </div>

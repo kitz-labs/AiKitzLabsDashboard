@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { FlaskConical, Lightbulb } from 'lucide-react';
 import { useDashboard } from '@/store';
 import type { Experiment, Learning } from '@/types';
+import { t } from '@/lib/i18n';
 
 type Tab = 'current' | 'history' | 'learnings';
 
@@ -12,7 +13,7 @@ export default function ExperimentsPage() {
   const [experiments, setExperiments] = useState<Experiment[]>([]);
   const [learnings, setLearnings] = useState<Learning[]>([]);
   const [tab, setTab] = useState<Tab>('current');
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
 
   useEffect(() => {
     const realParam = realOnly ? '?real=true' : '';
@@ -29,7 +30,7 @@ export default function ExperimentsPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header">
-          <h1 className="text-xl font-semibold">Experiments</h1>
+          <h1 className="text-xl font-semibold">{t(language, 'titleExperiments')}</h1>
         </div>
         <div className="panel-body !p-0">
           <div className="flex gap-0 border-b border-border">

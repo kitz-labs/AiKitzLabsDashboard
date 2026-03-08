@@ -10,6 +10,7 @@ import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
 import { timeAgo } from '@/lib/utils';
 import type { ApprovalItem, SkillExecution } from '@/types';
+import { t } from '@/lib/i18n';
 
 interface ScheduleJob {
   id: string;
@@ -60,7 +61,7 @@ function toTitleFromId(agent: string): string {
 type Role = 'admin' | 'editor' | 'viewer';
 
 export default function AutomationsPage() {
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
   const realParam = realOnly ? '?real=true' : '';
   const [role, setRole] = useState<Role>('viewer');
 
@@ -79,7 +80,7 @@ export default function AutomationsPage() {
   if (!data || loading) {
     return (
       <div className="space-y-6 animate-in">
-        <h1 className="text-xl font-semibold">Automations</h1>
+        <h1 className="text-xl font-semibold">{t(language, 'titleAutomations')}</h1>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => <div key={i} className="panel h-32 animate-pulse bg-muted/20" />)}
         </div>
@@ -108,7 +109,7 @@ export default function AutomationsPage() {
 
   return (
     <div className="space-y-6 animate-in">
-      <h1 className="text-xl font-semibold">Automations</h1>
+      <h1 className="text-xl font-semibold">{t(language, 'titleAutomations')}</h1>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

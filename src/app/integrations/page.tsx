@@ -2,6 +2,8 @@
 
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { formatDateTime } from '@/lib/utils';
+import { useDashboard } from '@/store';
+import { t } from '@/lib/i18n';
 
 interface IntegrationCard {
   enabled: boolean;
@@ -44,6 +46,7 @@ function StatusPill({ ok }: { ok?: boolean }) {
 }
 
 export default function IntegrationsPage() {
+  const { language } = useDashboard();
   const { data: gaHealth } = useSmartPoll<GAHealth>(() => fetch('/api/health/ga').then(r => r.json()), { interval: 60_000 });
   const { data: sanity } = useSmartPoll<SanityStatus>(() => fetch('/api/integrations/sanity').then(r => r.json()), { interval: 60_000 });
   const { data: mailchimp } = useSmartPoll<MailchimpStatus>(() => fetch('/api/integrations/mailchimp').then(r => r.json()), { interval: 60_000 });
@@ -54,8 +57,8 @@ export default function IntegrationsPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header">
-          <h1 className="text-xl font-semibold">Integrations</h1>
-          <p className="text-sm text-muted-foreground">Live status for Hermes data sources</p>
+          <h1 className="text-xl font-semibold">{t(language, 'titleIntegrations')}</h1>
+          <p className="text-sm text-muted-foreground">{t(language, 'integrationsSubtitle')}</p>
         </div>
       </div>
 

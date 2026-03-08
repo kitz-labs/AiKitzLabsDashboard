@@ -4,22 +4,23 @@ import { useEffect, useState } from 'react';
 import { PenLine, MessageCircle, Mail, Search, Info, Activity } from 'lucide-react';
 import { timeAgo } from '@/lib/utils';
 import { useDashboard } from '@/store';
+import { t } from '@/lib/i18n';
 import type { ActivityEntry } from '@/types';
-
-const ACTION_FILTERS = [
-  { key: '', label: 'All Actions' },
-  { key: 'post', label: 'Post' },
-  { key: 'engage', label: 'Engage' },
-  { key: 'discover', label: 'Discover' },
-  { key: 'send', label: 'Send' },
-  { key: 'triage', label: 'Triage' },
-  { key: 'research', label: 'Research' },
-];
 
 export default function ActivityPage() {
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [filter, setFilter] = useState('');
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
+
+  const actionFilters = [
+    { key: '', label: t(language, 'activityAllActions') },
+    { key: 'post', label: t(language, 'activityPost') },
+    { key: 'engage', label: t(language, 'activityEngage') },
+    { key: 'discover', label: t(language, 'activityDiscover') },
+    { key: 'send', label: t(language, 'activitySend') },
+    { key: 'triage', label: t(language, 'activityTriage') },
+    { key: 'research', label: t(language, 'activityResearch') },
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -33,7 +34,7 @@ export default function ActivityPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-xl font-semibold">Activity Log</h1>
+          <h1 className="text-xl font-semibold">{t(language, 'titleActivityLog')}</h1>
           <div className="flex items-center gap-2">
             <button
               className="btn btn-ghost text-xs"
@@ -46,13 +47,13 @@ export default function ActivityPage() {
                 window.open(`/api/activity?${params.toString()}`, '_blank', 'noopener,noreferrer');
               }}
             >
-              Export CSV
+              {t(language, 'activityExportCsv')}
             </button>
             <select
               value={filter}
               onChange={e => setFilter(e.target.value)}
             >
-              {ACTION_FILTERS.map(f => (
+              {actionFilters.map(f => (
                 <option key={f.key} value={f.key}>{f.label}</option>
               ))}
             </select>
@@ -64,7 +65,7 @@ export default function ActivityPage() {
         <div className="panel-body space-y-0">
           {entries.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
-              No activity logged yet
+              {t(language, 'activityEmpty')}
             </div>
           ) : (
             groupByDay(entries).map(group => (

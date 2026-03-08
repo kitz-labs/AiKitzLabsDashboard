@@ -1,6 +1,8 @@
 'use client';
 
 import { useSmartPoll } from '@/hooks/use-smart-poll';
+import { useDashboard } from '@/store';
+import { t } from '@/lib/i18n';
 
 interface DeployStatusPayload {
   service: { name: string; state: string };
@@ -18,6 +20,7 @@ interface DeployStatusPayload {
 }
 
 export default function DeployPage() {
+  const { language } = useDashboard();
   const { data, loading } = useSmartPoll<DeployStatusPayload | null>(
     () => fetch('/api/deploy-status').then(async r => (r.ok ? r.json() : null)),
     { interval: 15_000, key: 'deploy-status' },
@@ -26,7 +29,7 @@ export default function DeployPage() {
   if (loading || !data) {
     return (
       <div className="space-y-6 animate-in">
-        <h1 className="text-xl font-semibold">Deploy</h1>
+        <h1 className="text-xl font-semibold">{t(language, 'titleDeploy')}</h1>
         <div className="panel p-6 h-48 animate-pulse bg-muted/20" />
       </div>
     );
@@ -37,7 +40,7 @@ export default function DeployPage() {
 
   return (
     <div className="space-y-6 animate-in">
-      <h1 className="text-xl font-semibold">Deploy</h1>
+      <h1 className="text-xl font-semibold">{t(language, 'titleDeploy')}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <StatusCard label="Service" value={data.service.state} ok={serviceOk} />

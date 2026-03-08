@@ -6,6 +6,8 @@ import { AlertTriangle, BrainCircuit, GitCompare, RefreshCcw, Users } from 'luci
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { timeAgo } from '@/lib/utils';
 import type { MemoryAlertsPayload, MemoryDriftPayload, MemoryHealthPayload } from '@/types';
+import { useDashboard } from '@/store';
+import { t } from '@/lib/i18n';
 
 type HermesInstance = { id: string; label: string };
 type InstancesResponse = { default_instance: string; instances: HermesInstance[] };
@@ -62,6 +64,7 @@ function severityClass(sev: string | undefined): string {
 }
 
 export default function MemoryPage() {
+  const { language } = useDashboard();
   const [instances, setInstances] = useState<HermesInstance[]>([]);
   const [instanceId, setInstanceId] = useState('');
   const [instancesError, setInstancesError] = useState<string | null>(null);
@@ -147,7 +150,7 @@ export default function MemoryPage() {
     <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <div className="space-y-1">
-          <h1 className="text-xl font-semibold">Memory</h1>
+          <h1 className="text-xl font-semibold">{t(language, 'titleMemory')}</h1>
           <p className="text-xs text-muted-foreground">
             Drift, health, and recall risk signals.
             <span className="ml-2">

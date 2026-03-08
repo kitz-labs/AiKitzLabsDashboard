@@ -5,6 +5,7 @@ import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { toast } from '@/components/ui/toast';
 import { useDashboard } from '@/store';
 import { CheckCircle2, XCircle, Mail, PenLine, ShieldCheck } from 'lucide-react';
+import { t } from '@/lib/i18n';
 
 interface ContentApproval {
   id: string;
@@ -53,7 +54,7 @@ interface AuthMe {
 }
 
 export default function ApprovalsPage() {
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
   const realParam = realOnly ? '?real=true' : '';
   const [acting, setActing] = useState<string | null>(null);
   const [auth, setAuth] = useState<AuthMe | null>(null);
@@ -167,7 +168,7 @@ export default function ApprovalsPage() {
       <div className="panel">
         <div className="panel-header flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h1 className="text-xl font-semibold">Approvals</h1>
+            <h1 className="text-xl font-semibold">{t(language, 'titleApprovals')}</h1>
             <p className="text-sm text-muted-foreground">Review pending content drafts and outreach sequences</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">

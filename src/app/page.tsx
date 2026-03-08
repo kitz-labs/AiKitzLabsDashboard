@@ -13,6 +13,7 @@ import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
 import { timeAgo } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
+import { t } from '@/lib/i18n';
 import type { OverviewStats, Alert, ActivityEntry, DailyMetrics } from '@/types';
 import { PipelineFunnel } from '@/components/pipeline/pipeline-funnel';
 import { AgentSessions } from '@/components/sessions/agent-sessions';
@@ -77,7 +78,7 @@ interface CycleTimeBenchmarkPayload {
 }
 
 export default function OverviewPage() {
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
   const realParam = realOnly ? '?real=true' : '';
   const [refreshKey, setRefreshKey] = useState(0);
   const [role, setRole] = useState<Role>('viewer');
@@ -124,7 +125,7 @@ export default function OverviewPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header">
-          <h1 className="text-xl font-semibold">Overview</h1>
+          <h1 className="text-xl font-semibold">{t(language, 'navOverview')}</h1>
         </div>
       </div>
 
@@ -147,15 +148,15 @@ export default function OverviewPage() {
                   <span className="text-[10px] text-muted-foreground capitalize">{agent.status}</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
-                  <span className="font-mono">{agent.actions_today} actions today</span>
+                  <span className="font-mono">{agent.actions_today} {t(language, 'overviewActionsToday')}</span>
                   {agent.last_action_at && (
-                    <span className="truncate">Last: {timeAgo(agent.last_action_at)}</span>
+                    <span className="truncate">{t(language, 'overviewLast')}: {timeAgo(agent.last_action_at)}</span>
                   )}
                 </div>
               </div>
               {agent.next_job && (
                 <div className="text-right shrink-0">
-                  <div className="text-[10px] text-muted-foreground">Next</div>
+                  <div className="text-[10px] text-muted-foreground">{t(language, 'overviewNext')}</div>
                   <div className="text-xs font-medium">{agent.next_job}</div>
                   {agent.next_job_time && (
                     <div className="text-[10px] text-muted-foreground font-mono">{agent.next_job_time}</div>
@@ -175,19 +176,19 @@ export default function OverviewPage() {
             <div className="panel-header">
               <h3 className="section-title flex items-center gap-2">
               <Search size={14} />
-              X API Budget
+              {t(language, 'overviewXApiBudget')}
               <span className="text-[10px] text-muted-foreground font-mono ml-auto">{budget.date}</span>
               </h3>
             </div>
             <div className="panel-body space-y-3">
               <BudgetBar
-                label="Search"
+                label={t(language, 'overviewBudgetSearch')}
                 used={budget.calls}
                 limit={budget.daily_search_limit}
                 icon={<Search size={12} />}
               />
               <BudgetBar
-                label="Posts"
+                label={t(language, 'overviewBudgetPosts')}
                 used={budget.posts}
                 limit={budget.daily_post_limit}
                 icon={<Send size={12} />}
@@ -202,7 +203,7 @@ export default function OverviewPage() {
             <div className="panel-header flex items-center justify-between">
               <h3 className="section-title flex items-center gap-2">
                 <Zap size={14} className="text-warning" />
-                Action Items
+                {t(language, 'overviewActionItems')}
                 <span className="text-[10px] bg-warning/15 text-warning px-2 py-0.5 rounded-full font-semibold">
                   {action_items.length}
                 </span>
@@ -212,13 +213,13 @@ export default function OverviewPage() {
                   href="/content"
                   className="text-[10px] text-primary hover:underline"
                 >
-                  Content Queue
+                  {t(language, 'overviewContentQueue')}
                 </Link>
                 <Link
                   href="/outreach"
                   className="text-[10px] text-primary hover:underline"
                 >
-                  Outreach Approvals
+                  {t(language, 'overviewOutreachApprovals')}
                 </Link>
               </div>
             </div>
@@ -239,28 +240,28 @@ export default function OverviewPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
-          label="Posts Today"
+          label={t(language, 'overviewPostsToday')}
           value={stats.posts_today}
           icon={PenLine}
           sparkline={impressionData.slice(-14).map(d => ({ value: d.value }))}
           color="var(--primary)"
         />
         <StatCard
-          label="Engagements Today"
+          label={t(language, 'overviewEngagementsToday')}
           value={stats.engagement_today}
           icon={MessageCircle}
           sparkline={engagementData.slice(-14).map(d => ({ value: d.value }))}
           color="var(--success)"
         />
         <StatCard
-          label="Emails Sent"
+          label={t(language, 'overviewEmailsSent')}
           value={stats.emails_sent}
           icon={Mail}
           sparkline={sendsData.slice(-14).map(d => ({ value: d.value }))}
           color="var(--warning)"
         />
         <StatCard
-          label="Pipeline"
+          label={t(language, 'overviewPipeline')}
           value={stats.pipeline_count}
           icon={Users}
           sparkline={discoveryData.slice(-14).map(d => ({ value: d.value }))}
@@ -274,7 +275,7 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="panel">
           <div className="panel-header">
-            <h3 className="section-title">Impressions (12 weeks)</h3>
+            <h3 className="section-title">{t(language, 'overviewImpressions')}</h3>
           </div>
           <div className="panel-body">
           <TrendChart
@@ -286,7 +287,7 @@ export default function OverviewPage() {
         </div>
         <div className="panel">
           <div className="panel-header">
-            <h3 className="section-title">Engagement & Sends (12 weeks)</h3>
+            <h3 className="section-title">{t(language, 'overviewEngagementSends')}</h3>
           </div>
           <div className="panel-body">
           <TrendChart
@@ -317,11 +318,11 @@ export default function OverviewPage() {
         {/* Activity Feed */}
         <div className="panel">
           <div className="panel-header">
-            <h3 className="section-title">Recent Activity</h3>
+            <h3 className="section-title">{t(language, 'overviewRecentActivity')}</h3>
           </div>
           <div className="panel-body space-y-2 max-h-80 overflow-y-auto">
             {recentActivity.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No activity yet</p>
+              <p className="text-sm text-muted-foreground">{t(language, 'overviewNoActivity')}</p>
             ) : (
               recentActivity.map(entry => (
                 <div key={entry.id} className="flex items-start gap-3 py-2 border-b border-border/50 last:border-0">
@@ -344,13 +345,13 @@ export default function OverviewPage() {
         {/* Alerts */}
         <div className="panel">
           <div className="panel-header">
-            <h3 className="section-title">Alerts</h3>
+            <h3 className="section-title">{t(language, 'overviewAlerts')}</h3>
           </div>
           <div className="panel-body space-y-2">
             {alerts.length === 0 ? (
               <div className="flex items-center justify-center h-20 text-sm text-muted-foreground">
                 <CheckCircle size={16} className="mr-2 text-success" />
-                All clear
+                {t(language, 'overviewAllClear')}
               </div>
             ) : (
               alerts.map(alert => (

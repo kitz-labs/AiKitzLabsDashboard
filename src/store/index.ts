@@ -1,6 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type {
   ContentPost, Lead, Sequence, Suppression, Engagement,
   Signal, Experiment, Learning, DailyMetrics, ActivityEntry,
@@ -29,6 +30,7 @@ interface DashboardState {
   lastSynced: string | null;
   feedOpen: boolean;
   realOnly: boolean;
+  language: 'en' | 'de';
 
   // Actions
   setOverview: (data: OverviewStats) => void;
@@ -49,9 +51,10 @@ interface DashboardState {
   setLastSynced: (ts: string) => void;
   toggleFeed: () => void;
   toggleRealOnly: () => void;
+  toggleLanguage: () => void;
 }
 
-export const useDashboard = create<DashboardState>((set) => ({
+export const useDashboard = create<DashboardState>()(persist((set) => ({
   overview: { posts_today: 0, engagement_today: 0, emails_sent: 0, pipeline_count: 0 },
   alerts: [],
   content: [],
@@ -70,6 +73,7 @@ export const useDashboard = create<DashboardState>((set) => ({
   lastSynced: null,
   feedOpen: false,
   realOnly: false,
+  language: 'en',
 
   setOverview: (data) => set({ overview: data }),
   setAlerts: (data) => set({ alerts: data }),
@@ -89,6 +93,10 @@ export const useDashboard = create<DashboardState>((set) => ({
   setLastSynced: (ts) => set({ lastSynced: ts }),
   toggleFeed: () => set((s) => ({ feedOpen: !s.feedOpen })),
   toggleRealOnly: () => set((s) => ({ realOnly: !s.realOnly })),
+  toggleLanguage: () => set((s) => ({ language: s.language === 'en' ? 'de' : 'en' })),
+}), {
+  name: 'hermes-dashboard',
+  partialize: (state) => ({ language: state.language }),
 }));
 
 // Fetch helper

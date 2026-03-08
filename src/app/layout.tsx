@@ -18,8 +18,12 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Hermes Dashboard",
+  title: "AI Kitz Labs Dashboard",
   description: "Open-source marketing operations control center for AI agent teams",
+  icons: {
+    icon: "/logoheader.png",
+    apple: "/logoheader.png",
+  },
 };
 
 export const viewport = {

@@ -2,6 +2,9 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import { useDashboard } from '@/store';
+import { t } from '@/lib/i18n';
 
 function LoginForm() {
   const [username, setUsername] = useState('');
@@ -9,6 +12,7 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleEnabled, setGoogleEnabled] = useState(false);
+  const language = useDashboard(s => s.language);
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -38,7 +42,7 @@ function LoginForm() {
 
       if (!res.ok) {
         const data = await res.json();
-        setError(data.error || 'Login failed');
+        setError(data.error || t(language, 'loginFailed'));
         return;
       }
 
@@ -46,7 +50,7 @@ function LoginForm() {
       router.push(redirect);
       router.refresh();
     } catch {
-      setError('Connection error');
+      setError(t(language, 'loginConnectionError'));
     } finally {
       setLoading(false);
     }
@@ -56,7 +60,7 @@ function LoginForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label htmlFor="username" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-          Username
+          {t(language, 'loginUsername')}
         </label>
         <input
           id="username"
@@ -71,7 +75,7 @@ function LoginForm() {
 
       <div>
         <label htmlFor="password" className="block text-sm font-medium text-[var(--foreground)] mb-1.5">
-          Password
+          {t(language, 'loginPassword')}
         </label>
         <input
           id="password"
@@ -94,7 +98,7 @@ function LoginForm() {
         disabled={loading}
         className="w-full py-2.5 rounded-lg bg-[var(--primary)] text-[var(--primary-foreground)] text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
       >
-        {loading ? 'Signing in...' : 'Sign in'}
+        {loading ? t(language, 'loginSigningIn') : t(language, 'loginSignIn')}
       </button>
 
       {googleEnabled && (
@@ -102,7 +106,7 @@ function LoginForm() {
           href={`/api/auth/google/start?from=${encodeURIComponent(searchParams.get('from') || '/')}`}
           className="block w-full py-2.5 rounded-lg border border-[var(--border)] text-center text-sm font-medium hover:bg-[var(--muted)] transition-colors"
         >
-          Sign in with Google
+          {t(language, 'loginWithGoogle')}
         </a>
       )}
     </form>
@@ -110,13 +114,16 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const language = useDashboard(s => s.language);
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
       <div className="w-full max-w-sm p-8 rounded-xl border border-[var(--border)] bg-[var(--card)]">
         <div className="text-center mb-8">
-          <div className="text-3xl mb-2">&#127963;&#65039;</div>
-          <h1 className="text-xl font-semibold text-[var(--foreground)]">Hermes Dashboard</h1>
-          <p className="text-sm text-[var(--muted-foreground)] mt-1">Marketing Engine Control Center</p>
+          <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-[var(--card)] border border-[var(--border)] flex items-center justify-center overflow-hidden">
+            <Image src="/logoheader.png" alt="AI Kitz Labs" width={48} height={48} />
+          </div>
+          <h1 className="text-xl font-semibold text-[var(--foreground)]">{t(language, 'loginTitle')}</h1>
+          <p className="text-sm text-[var(--muted-foreground)] mt-1">{t(language, 'loginSubtitle')}</p>
         </div>
 
         <Suspense fallback={<div className="h-48" />}>

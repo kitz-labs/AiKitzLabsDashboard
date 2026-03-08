@@ -6,6 +6,7 @@ import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
 import { timeAgo } from '@/lib/utils';
 import type { ActivityEntry } from '@/types';
+import { t } from '@/lib/i18n';
 
 const ACTION_ICONS: Record<string, typeof PenLine> = {
   post: PenLine,
@@ -30,6 +31,17 @@ const ACTION_COLORS: Record<string, string> = {
 export function LiveFeed({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [filter, setFilter] = useState('');
   const realOnly = useDashboard(s => s.realOnly);
+  const language = useDashboard(s => s.language);
+
+  const actionLabels: Record<string, string> = {
+    post: t(language, 'liveFeedPost'),
+    engage: t(language, 'liveFeedEngage'),
+    send: t(language, 'liveFeedSend'),
+    discover: t(language, 'liveFeedDiscover'),
+    research: t(language, 'liveFeedResearch'),
+    triage: t(language, 'liveFeedTriage'),
+    alert: t(language, 'liveFeedAlert'),
+  };
 
   const { data: entries } = useSmartPoll<ActivityEntry[]>(
     () => {
@@ -63,7 +75,7 @@ export function LiveFeed({ open, onClose }: { open: boolean; onClose: () => void
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
           <div className="flex items-center gap-2">
             <Radio size={14} className="text-success" />
-            <span className="text-sm font-medium">Live Feed</span>
+            <span className="text-sm font-medium">{t(language, 'liveFeedTitle')}</span>
             <div className="w-1.5 h-1.5 rounded-full bg-success pulse-dot" />
           </div>
           <div className="flex items-center gap-2">
@@ -72,14 +84,14 @@ export function LiveFeed({ open, onClose }: { open: boolean; onClose: () => void
               value={filter}
               onChange={e => setFilter(e.target.value)}
             >
-              <option value="">All</option>
-              <option value="post">Post</option>
-              <option value="engage">Engage</option>
-              <option value="send">Send</option>
-              <option value="discover">Discover</option>
-              <option value="research">Research</option>
-              <option value="triage">Triage</option>
-              <option value="alert">Alert</option>
+              <option value="">{t(language, 'liveFeedAll')}</option>
+              <option value="post">{t(language, 'liveFeedPost')}</option>
+              <option value="engage">{t(language, 'liveFeedEngage')}</option>
+              <option value="send">{t(language, 'liveFeedSend')}</option>
+              <option value="discover">{t(language, 'liveFeedDiscover')}</option>
+              <option value="research">{t(language, 'liveFeedResearch')}</option>
+              <option value="triage">{t(language, 'liveFeedTriage')}</option>
+              <option value="alert">{t(language, 'liveFeedAlert')}</option>
             </select>
             <button
               className="w-6 h-6 flex items-center justify-center rounded hover:bg-muted transition-colors text-muted-foreground"
@@ -94,7 +106,7 @@ export function LiveFeed({ open, onClose }: { open: boolean; onClose: () => void
         <div className="flex-1 overflow-y-auto">
           {!entries || entries.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-sm text-muted-foreground">
-              No activity yet
+              {t(language, 'liveFeedEmpty')}
             </div>
           ) : (
             <div className="divide-y divide-border/20">
@@ -111,7 +123,7 @@ export function LiveFeed({ open, onClose }: { open: boolean; onClose: () => void
                         <div className="flex items-center gap-2">
                           {entry.action && (
                             <span className={`text-[10px] font-semibold uppercase ${color}`}>
-                              {entry.action}
+                                {actionLabels[entry.action] || entry.action}
                             </span>
                           )}
                           <span className="text-[10px] text-muted-foreground">

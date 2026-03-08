@@ -26,6 +26,7 @@ import { DataTable } from "@/components/ui/data-table";
 import type { SocialAnalyticsPoint, SocialAnalyticsSummary } from "@/lib/analytics";
 import { formatDurationSeconds } from "@/lib/analytics";
 import { timeAgo } from "@/lib/utils";
+import { t } from "@/lib/i18n";
 import type {
   Ga4TopPage,
   Ga4TrafficSource,
@@ -146,7 +147,7 @@ interface AnalyticsPayload {
 }
 
 export default function AnalyticsPage() {
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
   const [days, setDays] = useState(30);
 
   const url = `/api/analytics?days=${days}${realOnly ? "&real=true" : ""}`;
@@ -162,7 +163,7 @@ export default function AnalyticsPage() {
       <div className="space-y-6 animate-in">
         <div className="panel">
           <div className="panel-header">
-            <h1 className="text-xl font-semibold">Analytics</h1>
+            <h1 className="text-xl font-semibold">{t(language, 'navAnalytics')}</h1>
           </div>
           <div className="panel-body">
             <div className="text-sm text-muted-foreground">Loading…</div>
@@ -178,7 +179,7 @@ export default function AnalyticsPage() {
         <div className="panel-header flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2">
             <LineChart size={18} className="text-primary" />
-            <h1 className="text-xl font-semibold">Analytics</h1>
+            <h1 className="text-xl font-semibold">{t(language, 'navAnalytics')}</h1>
           </div>
           <div className="flex items-center gap-1">
             <RangeButton active={days === 7} onClick={() => setDays(7)} label="7d" />

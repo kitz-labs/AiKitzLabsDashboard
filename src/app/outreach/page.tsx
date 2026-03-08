@@ -9,6 +9,7 @@ import { formatDateTime } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
 import { useDashboard } from '@/store';
 import type { Lead, Sequence, FunnelStep, Suppression } from '@/types';
+import { t } from '@/lib/i18n';
 
 type Tab = 'pipeline' | 'leads' | 'sequences' | 'approvals' | 'suppression';
 
@@ -21,7 +22,7 @@ export default function OutreachPage() {
   const [tab, setTab] = useState<Tab>('pipeline');
   const [tierFilter, setTierFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
 
   const load = useCallback(() => {
     const realParam = realOnly ? '&real=true' : '';
@@ -74,7 +75,7 @@ export default function OutreachPage() {
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-semibold">Outreach</h1>
+        <h1 className="text-xl font-semibold">{t(language, 'titleOutreach')}</h1>
         <div className="text-xs text-muted-foreground">
           Leads <span className="font-mono text-foreground">{leads.length}</span>
           {' · '}

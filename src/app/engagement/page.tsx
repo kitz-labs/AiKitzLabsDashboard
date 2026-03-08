@@ -8,6 +8,7 @@ import { ExternalLink, Copy, Check } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
 import { useDashboard } from '@/store';
 import type { Engagement, Signal } from '@/types';
+import { t } from '@/lib/i18n';
 
 type Tab = 'x' | 'linkedin' | 'signals';
 
@@ -16,7 +17,7 @@ export default function EngagementPage() {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [tab, setTab] = useState<Tab>('x');
   const [copied, setCopied] = useState<number | null>(null);
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
 
   useEffect(() => {
     const realParam = realOnly ? '?real=true' : '';
@@ -36,7 +37,7 @@ export default function EngagementPage() {
   return (
     <div className="space-y-6 animate-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-xl font-semibold">Engagement</h1>
+        <h1 className="text-xl font-semibold">{t(language, 'titleEngagement')}</h1>
         <div className="text-xs text-muted-foreground">
           X <span className="font-mono text-foreground">{xEngagements.length}</span>
           {' · '}

@@ -7,6 +7,7 @@ import { HeaderBar } from './header-bar';
 import { MobileNav } from './mobile-nav';
 import { AppShell } from './app-shell';
 import { CommandPalette } from '../command-palette';
+import { useDashboard } from '@/store';
 
 const AUTH_PATHS = ['/login'];
 
@@ -14,6 +15,7 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [authChecked, setAuthChecked] = useState(false);
+  const language = useDashboard(s => s.language);
 
   const isAuthPath = AUTH_PATHS.some((p) => pathname.startsWith(p));
 
@@ -36,6 +38,10 @@ export function LayoutContent({ children }: { children: React.ReactNode }) {
       cancelled = true;
     };
   }, [isAuthPath, pathname, router]);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   if (isAuthPath) {
     return <>{children}</>;

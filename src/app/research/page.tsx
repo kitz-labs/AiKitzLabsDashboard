@@ -4,22 +4,23 @@ import { useEffect, useState } from 'react';
 import { SignalCard } from '@/components/ui/signal-card';
 import { useDashboard } from '@/store';
 import type { Signal } from '@/types';
+import { t } from '@/lib/i18n';
 
-const SIGNAL_TYPES: { key: string; label: string }[] = [
-  { key: '', label: 'All' },
-  { key: 'pain', label: 'Pain' },
-  { key: 'hiring', label: 'Hiring' },
-  { key: 'launch', label: 'Launch' },
-  { key: 'competitor', label: 'Competitor' },
-  { key: 'brand_mention', label: 'Brand Mention' },
-  { key: 'opportunity', label: 'Opportunity' },
+const SIGNAL_TYPES: { key: string; labelKey: Parameters<typeof t>[1] }[] = [
+  { key: '', labelKey: 'signalAll' },
+  { key: 'pain', labelKey: 'signalPain' },
+  { key: 'hiring', labelKey: 'signalHiring' },
+  { key: 'launch', labelKey: 'signalLaunch' },
+  { key: 'competitor', labelKey: 'signalCompetitor' },
+  { key: 'brand_mention', labelKey: 'signalBrandMention' },
+  { key: 'opportunity', labelKey: 'signalOpportunity' },
 ];
 
 export default function ResearchPage() {
   const [signals, setSignals] = useState<Signal[]>([]);
   const [typeFilter, setTypeFilter] = useState('');
   const [relevanceFilter, setRelevanceFilter] = useState('');
-  const { realOnly } = useDashboard();
+  const { realOnly, language } = useDashboard();
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -37,24 +38,24 @@ export default function ResearchPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header flex items-center justify-between flex-wrap gap-3">
-          <h1 className="text-xl font-semibold">Research</h1>
+          <h1 className="text-xl font-semibold">{t(language, 'titleResearch')}</h1>
           <div className="flex gap-3">
             <select
               value={typeFilter}
               onChange={e => setTypeFilter(e.target.value)}
             >
-              {SIGNAL_TYPES.map(t => (
-                <option key={t.key} value={t.key}>{t.label}</option>
+              {SIGNAL_TYPES.map(type => (
+                <option key={type.key} value={type.key}>{t(language, type.labelKey)}</option>
               ))}
             </select>
             <select
               value={relevanceFilter}
               onChange={e => setRelevanceFilter(e.target.value)}
             >
-              <option value="">All Relevance</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value="">{t(language, 'signalRelevanceAll')}</option>
+              <option value="high">{t(language, 'signalRelevanceHigh')}</option>
+              <option value="medium">{t(language, 'signalRelevanceMedium')}</option>
+              <option value="low">{t(language, 'signalRelevanceLow')}</option>
             </select>
           </div>
         </div>
