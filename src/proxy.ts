@@ -24,6 +24,24 @@ function isHostAllowedByLock(hostName: string): boolean {
   return allowed.includes(hostName.toLowerCase());
 }
 
+function getAllowedOrigins(request: NextRequest): string[] {
+  const origins = new Set<string>();
+  const publicBaseUrl = process.env.PUBLIC_BASE_URL?.trim();
+  if (publicBaseUrl) {
+    origins.add(new URL(publicBaseUrl).origin);
+  }
+
+  origins.add(request.nextUrl.origin);
+
+  const forwardedHost = request.headers.get('x-forwarded-host') || request.headers.get('host');
+  const forwardedProto = request.headers.get('x-forwarded-proto') || request.nextUrl.protocol.replace(/:$/, '');
+  if (forwardedHost && forwardedProto) {
+    origins.add(`${forwardedProto}://${forwardedHost}`);
+  }
+
+  return Array.from(origins);
+}
+
 export function proxy(request: NextRequest) {
   const host = request.headers.get('host') || '';
   const hostName = host.split(':')[0];
@@ -41,13 +59,11 @@ export function proxy(request: NextRequest) {
   const apiKey = request.headers.get('x-api-key');
 
   if (!['GET', 'HEAD', 'OPTIONS'].includes(request.method) && sessionToken && !(apiKey && apiKey === process.env.API_KEY)) {
-    const allowedOrigin = process.env.PUBLIC_BASE_URL
-      ? new URL(process.env.PUBLIC_BASE_URL).origin
-      : request.nextUrl.origin;
+	const allowedOrigins = getAllowedOrigins(request);
     const origin = request.headers.get('origin');
     const referer = request.headers.get('referer');
-    const originOk = origin ? origin === allowedOrigin : true;
-    const refererOk = referer ? referer.startsWith(allowedOrigin) : true;
+	const originOk = origin ? allowedOrigins.includes(origin) : true;
+	const refererOk = referer ? allowedOrigins.some((allowedOrigin) => referer.startsWith(allowedOrigin)) : true;
     if (!originOk || !refererOk || (!origin && !referer)) {
       return new NextResponse('Forbidden', { status: 403 });
     }
