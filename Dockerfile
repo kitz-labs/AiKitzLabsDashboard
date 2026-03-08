@@ -34,4 +34,4 @@ COPY --from=builder --chown=kitz:nodejs /app/public ./public
 COPY --from=builder --chown=kitz:nodejs /app/.next ./.next
 USER kitz
 EXPOSE 3000
-CMD ["pnpm", "start"]
+CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3000"]
