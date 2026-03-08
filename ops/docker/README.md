@@ -27,6 +27,10 @@ Required values:
 - `AUTH_PASS`
 - `API_KEY`
 
+Optional values:
+
+- `HOST_PORT` — external host port mapped to the dashboard container (`3000` default, use `1201` on your VPS if that port is already opened)
+
 ## Start
 
 ```bash

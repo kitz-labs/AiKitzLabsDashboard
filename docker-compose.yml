@@ -5,7 +5,7 @@ services:
     container_name: kitz-dashboard
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${HOST_PORT:-3000}:3000"
     env_file:
       - ./ops/docker/kitz-dashboard.env
     environment:

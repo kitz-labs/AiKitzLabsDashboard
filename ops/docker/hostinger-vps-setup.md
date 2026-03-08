@@ -28,6 +28,10 @@ Fill in at least:
 - `AUTH_PASS`
 - `API_KEY`
 
+Optional for your current VPS layout:
+
+- `HOST_PORT=1201`
+
 The real `ops/docker/kitz-dashboard.env` file stays on the VPS and is not committed to Git.
 
 ## 4. Start the app
