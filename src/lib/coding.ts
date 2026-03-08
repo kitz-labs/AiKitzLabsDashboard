@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { getDb } from './db';
-import { getHermesStateDir } from './hermes-state';
+import { getKitzStateDir } from './kitz-state';
 import type {
   CodingApprovalDTO,
   CodingApprovalPayload,
@@ -107,12 +107,12 @@ export function getCodingProviderModels(provider: CodingProvider): string[] {
 }
 
 export function isWorkspaceWriteEnabled(): boolean {
-  return process.env.HERMES_ALLOW_WORKSPACE_WRITE === 'true';
+  return process.env.KITZ_ALLOW_WORKSPACE_WRITE === 'true';
 }
 
 export function getCodingStorageDir(): string {
-  const configured = process.env.HERMES_CODING_STORAGE_DIR?.trim();
-  const base = configured || path.join(getHermesStateDir(), 'coding');
+  const configured = process.env.KITZ_CODING_STORAGE_DIR?.trim();
+  const base = configured || path.join(getKitzStateDir(), 'coding');
   fs.mkdirSync(base, { recursive: true });
   return base;
 }

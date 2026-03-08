@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 
-export type HermesInstance = {
+export type KitzInstance = {
   id: string;
   label: string;
   openclawHome: string;
@@ -33,15 +33,15 @@ function normalizeHome(raw: unknown): string {
   return path.resolve(expandHome(v));
 }
 
-function parseInstancesFromEnv(): HermesInstance[] | null {
-  const raw = process.env.HERMES_OPENCLAW_INSTANCES?.trim();
+function parseInstancesFromEnv(): KitzInstance[] | null {
+  const raw = process.env.KITZ_OPENCLAW_INSTANCES?.trim();
   if (!raw) return null;
 
   try {
     const parsed = JSON.parse(raw) as unknown;
     if (!Array.isArray(parsed)) return null;
 
-    const out: HermesInstance[] = [];
+    const out: KitzInstance[] = [];
     for (const item of parsed) {
       if (!isRecord(item)) continue;
       const id = normalizeId(item.id);
@@ -65,17 +65,17 @@ function parseInstancesFromEnv(): HermesInstance[] | null {
 }
 
 export function getDefaultInstanceId(): string {
-  const v = process.env.HERMES_DEFAULT_INSTANCE?.trim();
+  const v = process.env.KITZ_DEFAULT_INSTANCE?.trim();
   return v ? v : 'default';
 }
 
-export function getInstances(): HermesInstance[] {
+export function getInstances(): KitzInstance[] {
   const fromEnv = parseInstancesFromEnv();
   if (fromEnv) return fromEnv;
 
   const defaultId = getDefaultInstanceId();
   const home =
-    process.env.HERMES_OPENCLAW_HOME?.trim() ||
+    process.env.KITZ_OPENCLAW_HOME?.trim() ||
     process.env.OPENCLAW_HOME?.trim() ||
     path.join(os.homedir(), '.openclaw');
 
@@ -84,12 +84,12 @@ export function getInstances(): HermesInstance[] {
       id: defaultId,
       label: 'Default',
       openclawHome: path.resolve(expandHome(home)),
-      cronUser: process.env.HERMES_CRON_USER?.trim() || undefined,
+      cronUser: process.env.KITZ_CRON_USER?.trim() || undefined,
     },
   ];
 }
 
-export function getInstance(id?: string | null): HermesInstance {
+export function getInstance(id?: string | null): KitzInstance {
   const instances = getInstances();
   const wanted = (id ?? '').trim();
 
@@ -113,7 +113,7 @@ export function getInstance(id?: string | null): HermesInstance {
   );
 }
 
-export function resolveOpenClawPaths(instance: HermesInstance): {
+export function resolveOpenClawPaths(instance: KitzInstance): {
   openclawHome: string;
   openclawConfigPath: string;
   agentsDir: string;
@@ -134,7 +134,7 @@ export function resolveOpenClawPaths(instance: HermesInstance): {
 
 export function allowPolicyWrite(): boolean {
   return (
-    String(process.env.HERMES_ALLOW_POLICY_WRITE ?? '')
+    String(process.env.KITZ_ALLOW_POLICY_WRITE ?? '')
       .trim()
       .toLowerCase() === 'true'
   );
@@ -142,7 +142,7 @@ export function allowPolicyWrite(): boolean {
 
 export function allowCronWrite(): boolean {
   return (
-    String(process.env.HERMES_ALLOW_CRON_WRITE ?? '')
+    String(process.env.KITZ_ALLOW_CRON_WRITE ?? '')
       .trim()
       .toLowerCase() === 'true'
   );
@@ -150,7 +150,7 @@ export function allowCronWrite(): boolean {
 
 export function allowWorkspaceWrite(): boolean {
   return (
-    String(process.env.HERMES_ALLOW_WORKSPACE_WRITE ?? '')
+    String(process.env.KITZ_ALLOW_WORKSPACE_WRITE ?? '')
       .trim()
       .toLowerCase() === 'true'
   );

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getHermesStateDir } from '@/lib/hermes-state';
+import { getKitzStateDir } from '@/lib/kitz-state';
 import { requireApiUser } from '@/lib/api-auth';
 
-const STATE_DIR = getHermesStateDir();
+const STATE_DIR = getKitzStateDir();
 const LEADS_PATH = path.join(STATE_DIR, 'leads.json');
 
 type LeadStateRow = {

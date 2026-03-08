@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   const auth = requireApiEditor(req as unknown as Request);
   if (auth) return auth;
   if (!allowCronWrite()) {
-    return NextResponse.json({ error: 'Cron writes are disabled (set HERMES_ALLOW_CRON_WRITE=true)' }, { status: 403 });
+    return NextResponse.json({ error: 'Cron writes are disabled (set KITZ_ALLOW_CRON_WRITE=true)' }, { status: 403 });
   }
   const actor = requireUser(req as unknown as Request);
   const body = await req.json().catch(() => ({}));
@@ -85,7 +85,7 @@ export async function PATCH(req: NextRequest) {
   const auth = requireApiEditor(req as unknown as Request);
   if (auth) return auth;
   if (!allowCronWrite()) {
-    return NextResponse.json({ error: 'Cron writes are disabled (set HERMES_ALLOW_CRON_WRITE=true)' }, { status: 403 });
+    return NextResponse.json({ error: 'Cron writes are disabled (set KITZ_ALLOW_CRON_WRITE=true)' }, { status: 403 });
   }
   const actor = requireUser(req as unknown as Request);
   const body = await req.json().catch(() => ({}));
@@ -122,7 +122,7 @@ export async function DELETE(req: NextRequest) {
   const auth = requireApiEditor(req as unknown as Request);
   if (auth) return auth;
   if (!allowCronWrite()) {
-    return NextResponse.json({ error: 'Cron writes are disabled (set HERMES_ALLOW_CRON_WRITE=true)' }, { status: 403 });
+    return NextResponse.json({ error: 'Cron writes are disabled (set KITZ_ALLOW_CRON_WRITE=true)' }, { status: 403 });
   }
   const actor = requireUser(req as unknown as Request);
 

@@ -1,22 +1,22 @@
 # Systemd Target Server Notes
 
-Goal: keep `hermes-dashboard` "plug-and-play" across OpenClaw instances by avoiding:
+Goal: keep `kitz-dashboard` "plug-and-play" across OpenClaw instances by avoiding:
 
 - hardcoded home directories (`/home/<user>/...`)
 - secrets inside unit files
 
 ## Recommended Layout
 
-- App code: `/opt/hermes-dashboard`
+- App code: `/opt/kitz-dashboard`
 - Runtime data:
-  - DB: `/var/lib/hermes-dashboard/hermes.db`
-  - State: `/var/lib/hermes-dashboard/state/`
-- Logs: `/var/log/hermes-dashboard/`
-- Env file (secrets + config): `/etc/hermes-dashboard/hermes-dashboard.env`
+  - DB: `/var/lib/kitz-dashboard/kitz.db`
+  - State: `/var/lib/kitz-dashboard/state/`
+- Logs: `/var/log/kitz-dashboard/`
+- Env file (secrets + config): `/etc/kitz-dashboard/kitz-dashboard.env`
 
 ## Unit File
 
-Use `ops/systemd/hermes-dashboard.service` as the final default for a Linux target server.
+Use `ops/systemd/kitz-dashboard.service` as the final default for a Linux target server.
 
 Important: update these to match your deployment:
 
@@ -27,10 +27,10 @@ Important: update these to match your deployment:
 
 The service now assumes:
 
-- app checkout at `/opt/hermes-dashboard`
-- runtime user `hermes`
+- app checkout at `/opt/kitz-dashboard`
+- runtime user `kitz`
 - standalone build already present in `.next/standalone`
-- runtime writes only under `/opt/hermes-dashboard/.next`, `/var/lib/hermes-dashboard`, and `/var/log/hermes-dashboard`
+- runtime writes only under `/opt/kitz-dashboard/.next`, `/var/lib/kitz-dashboard`, and `/var/log/kitz-dashboard`
 
 ## Env File
 
@@ -39,20 +39,20 @@ Minimal required values:
 - `AUTH_USER`, `AUTH_PASS`
 - `API_KEY`
 
-Start from `ops/systemd/hermes-dashboard.env.example`.
+Start from `ops/systemd/kitz-dashboard.env.example`.
 
 Template-safe defaults:
 
-- `HERMES_DB_PATH=/var/lib/hermes-dashboard/hermes.db`
-- `HERMES_STATE_DIR=/var/lib/hermes-dashboard/state`
+- `KITZ_DB_PATH=/var/lib/kitz-dashboard/kitz.db`
+- `KITZ_STATE_DIR=/var/lib/kitz-dashboard/state`
 
 OpenClaw instance discovery:
 
 - Single instance:
-  - `HERMES_OPENCLAW_HOME=/home/<user>/.openclaw`
-  - `HERMES_DEFAULT_INSTANCE=default`
+  - `KITZ_OPENCLAW_HOME=/home/<user>/.openclaw`
+  - `KITZ_DEFAULT_INSTANCE=default`
 - Multi instance:
-  - `HERMES_OPENCLAW_INSTANCES=[{"id":"default","label":"Default","openclawHome":"..."}]`
+  - `KITZ_OPENCLAW_INSTANCES=[{"id":"default","label":"Default","openclawHome":"..."}]`
 
 ## Secrets Hygiene
 
@@ -69,16 +69,16 @@ Use `pnpm build:standalone` for deployments that run `.next/standalone/server.js
 Create the service user and directories:
 
 ```bash
-sudo useradd --system --create-home --home-dir /home/hermes --shell /usr/sbin/nologin hermes
-sudo mkdir -p /opt/hermes-dashboard /etc/hermes-dashboard /var/lib/hermes-dashboard/state /var/log/hermes-dashboard
-sudo chown -R hermes:hermes /opt/hermes-dashboard /var/lib/hermes-dashboard /var/log/hermes-dashboard
+sudo useradd --system --create-home --home-dir /home/kitz --shell /usr/sbin/nologin kitz
+sudo mkdir -p /opt/kitz-dashboard /etc/kitz-dashboard /var/lib/kitz-dashboard/state /var/log/kitz-dashboard
+sudo chown -R kitz:kitz /opt/kitz-dashboard /var/lib/kitz-dashboard /var/log/kitz-dashboard
 ```
 
 Clone and build the app:
 
 ```bash
-sudo -u hermes git clone https://github.com/kitz-labs/AiKitzLabsDashboard.git /opt/hermes-dashboard
-cd /opt/hermes-dashboard
+sudo -u kitz git clone https://github.com/kitz-labs/AiKitzLabsDashboard.git /opt/kitz-dashboard
+cd /opt/kitz-dashboard
 corepack enable
 pnpm install --frozen-lockfile
 pnpm build:standalone
@@ -87,45 +87,45 @@ pnpm build:standalone
 Install env and service files:
 
 ```bash
-sudo cp /opt/hermes-dashboard/ops/systemd/hermes-dashboard.env.example /etc/hermes-dashboard/hermes-dashboard.env
-sudo cp /opt/hermes-dashboard/ops/systemd/hermes-dashboard.service /etc/systemd/system/hermes-dashboard.service
-sudo chmod 640 /etc/hermes-dashboard/hermes-dashboard.env
+sudo cp /opt/kitz-dashboard/ops/systemd/kitz-dashboard.env.example /etc/kitz-dashboard/kitz-dashboard.env
+sudo cp /opt/kitz-dashboard/ops/systemd/kitz-dashboard.service /etc/systemd/system/kitz-dashboard.service
+sudo chmod 640 /etc/kitz-dashboard/kitz-dashboard.env
 sudo systemctl daemon-reload
-sudo systemctl enable --now hermes-dashboard
+sudo systemctl enable --now kitz-dashboard
 ```
 
 Verify and inspect logs:
 
 ```bash
-sudo systemctl status hermes-dashboard --no-pager
-sudo journalctl -u hermes-dashboard -n 200 --no-pager
-sudo journalctl -u hermes-dashboard -f
+sudo systemctl status kitz-dashboard --no-pager
+sudo journalctl -u kitz-dashboard -n 200 --no-pager
+sudo journalctl -u kitz-dashboard -f
 ```
 
 Deploy a new version later:
 
 ```bash
-cd /opt/hermes-dashboard
-sudo -u hermes git pull --ff-only
+cd /opt/kitz-dashboard
+sudo -u kitz git pull --ff-only
 pnpm install --frozen-lockfile
 pnpm build:standalone
-sudo systemctl restart hermes-dashboard
+sudo systemctl restart kitz-dashboard
 ```
 
 ## 1Password (Recommended)
 
 If you deploy with 1Password, the standalone entrypoint supports resolving secrets at runtime via op run.
 
-- Non-secret config: /etc/hermes-dashboard/hermes-dashboard.env
-- op:// references (non-secret template): /etc/hermes-dashboard/hermes-dashboard.op.env
+- Non-secret config: /etc/kitz-dashboard/kitz-dashboard.env
+- op:// references (non-secret template): /etc/kitz-dashboard/kitz-dashboard.op.env
 - Required secret for op: OP_SERVICE_ACCOUNT_TOKEN (set via systemd EnvironmentFile or another secret store)
 - Optional mode flag:
-  - `HERMES_1PASSWORD_MODE=off` (never use op)
-  - `HERMES_1PASSWORD_MODE=auto` (default; try op then fallback to env)
-  - `HERMES_1PASSWORD_MODE=required` (fail startup if op cannot run)
+  - `KITZ_1PASSWORD_MODE=off` (never use op)
+  - `KITZ_1PASSWORD_MODE=auto` (default; try op then fallback to env)
+  - `KITZ_1PASSWORD_MODE=required` (fail startup if op cannot run)
 
-A template for the op env file lives at: ops/1password/hermes-dashboard.op.env.example
+A template for the op env file lives at: ops/1password/kitz-dashboard.op.env.example
 
 Notes:
 - Analytics keys like PLAUSIBLE_SITE_ID / PLAUSIBLE_API_KEY should live in 1Password and be referenced from the op env template.
-- scripts/start-standalone.sh uses op run according to `HERMES_1PASSWORD_MODE` and `HERMES_OP_ENV_FILE`.
+- scripts/start-standalone.sh uses op run according to `KITZ_1PASSWORD_MODE` and `KITZ_OP_ENV_FILE`.

@@ -12,8 +12,8 @@ export PORT="${PORT:-3000}"
 # - off: never use op run
 # - auto (default): use op run when available; otherwise fall back to existing env
 # - required: fail startup unless op run succeeds
-OP_MODE="${HERMES_1PASSWORD_MODE:-auto}"
-OP_ENV_FILE="${HERMES_OP_ENV_FILE:-/etc/hermes-dashboard/hermes-dashboard.op.env}"
+OP_MODE="${KITZ_1PASSWORD_MODE:-auto}"
+OP_ENV_FILE="${KITZ_OP_ENV_FILE:-/etc/kitz-dashboard/kitz-dashboard.op.env}"
 
 run_with_op() {
   echo "[start] resolving runtime env via 1Password: $OP_ENV_FILE" >&2
@@ -28,14 +28,14 @@ can_use_op() {
 
 case "${OP_MODE,,}" in
   off|false|0|disabled)
-    echo "[start] 1Password overlay disabled (HERMES_1PASSWORD_MODE=$OP_MODE)" >&2
+    echo "[start] 1Password overlay disabled (KITZ_1PASSWORD_MODE=$OP_MODE)" >&2
     ;;
   required)
     if can_use_op; then
       run_with_op
       exit $?
     fi
-    echo "[start] 1Password required but unavailable. Ensure: op installed, OP_SERVICE_ACCOUNT_TOKEN set, and HERMES_OP_ENV_FILE exists." >&2
+    echo "[start] 1Password required but unavailable. Ensure: op installed, OP_SERVICE_ACCOUNT_TOKEN set, and KITZ_OP_ENV_FILE exists." >&2
     exit 1
     ;;
   auto|"")
@@ -50,7 +50,7 @@ case "${OP_MODE,,}" in
     fi
     ;;
   *)
-    echo "[start] Invalid HERMES_1PASSWORD_MODE='$OP_MODE'. Use: off|auto|required" >&2
+    echo "[start] Invalid KITZ_1PASSWORD_MODE='$OP_MODE'. Use: off|auto|required" >&2
     exit 1
     ;;
 esac

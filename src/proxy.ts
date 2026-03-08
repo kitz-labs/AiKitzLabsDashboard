@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const SESSION_COOKIE = 'hermes-session';
+const SESSION_COOKIE = 'kitz-session';
 
 function isHostAllowedByLock(hostName: string): boolean {
-  const mode = (process.env.HERMES_HOST_LOCK || 'local').trim().toLowerCase();
+  const mode = (process.env.KITZ_HOST_LOCK || 'local').trim().toLowerCase();
   if (mode === 'off' || mode === 'disabled' || mode === 'false' || mode === '0') {
     return true;
   }

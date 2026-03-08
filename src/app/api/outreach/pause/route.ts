@@ -3,9 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getUserFromRequest } from '@/lib/auth';
 import { getDb } from '@/lib/db';
-import { getHermesStateDir } from '@/lib/hermes-state';
+import { getKitzStateDir } from '@/lib/kitz-state';
 
-const STATE_DIR = getHermesStateDir();
+const STATE_DIR = getKitzStateDir();
 const FLAG_PATH = path.join(STATE_DIR, 'sending-paused.flag');
 
 export async function POST(req: NextRequest) {

@@ -18,8 +18,8 @@ cd AiKitzLabsDashboard
 ## 3. Prepare runtime env
 
 ```bash
-cp ops/docker/hermes-dashboard.env.example ops/docker/hermes-dashboard.env
-nano ops/docker/hermes-dashboard.env
+cp ops/docker/kitz-dashboard.env.example ops/docker/kitz-dashboard.env
+nano ops/docker/kitz-dashboard.env
 ```
 
 Fill in at least:

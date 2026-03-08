@@ -4,9 +4,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
-if [[ ! -f "ops/docker/hermes-dashboard.env" ]]; then
-  echo "[deploy] Missing ops/docker/hermes-dashboard.env" >&2
-  echo "[deploy] Copy ops/docker/hermes-dashboard.env.example and fill in your secrets first." >&2
+if [[ ! -f "ops/docker/kitz-dashboard.env" ]]; then
+  echo "[deploy] Missing ops/docker/kitz-dashboard.env" >&2
+  echo "[deploy] Copy ops/docker/kitz-dashboard.env.example and fill in your secrets first." >&2
   exit 1
 fi
 

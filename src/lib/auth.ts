@@ -449,7 +449,7 @@ export function deleteUser(userId: number): void {
 
 export function getUserFromRequest(request: Request): User | null {
   const cookie = request.headers.get('cookie') || '';
-  const match = cookie.match(/(?:^|;\s*)hermes-session=([^;]*)/);
+  const match = cookie.match(/(?:^|;\s*)kitz-session=([^;]*)/);
   const token = match ? decodeURIComponent(match[1]) : null;
   if (token) {
     const user = validateSession(token);

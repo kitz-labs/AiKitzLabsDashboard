@@ -4,8 +4,8 @@ import { mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const tempDir = mkdtempSync(path.join(tmpdir(), 'hermes-writeback-test-'));
-process.env.HERMES_STATE_DIR = tempDir;
+const tempDir = mkdtempSync(path.join(tmpdir(), 'kitz-writeback-test-'));
+process.env.KITZ_STATE_DIR = tempDir;
 
 import { writebackLeadCreate, writebackLeadDelete, writebackLeadUpdate } from './writeback';
 

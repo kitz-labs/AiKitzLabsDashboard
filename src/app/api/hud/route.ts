@@ -2,13 +2,13 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { getDb } from '@/lib/db';
-import { getHermesStateDir } from '@/lib/hermes-state';
+import { getKitzStateDir } from '@/lib/kitz-state';
 import { requireApiUser } from '@/lib/api-auth';
 import { getInstance, resolveOpenClawPaths } from '@/lib/instances';
 
 export const dynamic = 'force-dynamic';
 
-const STATE_DIR = getHermesStateDir();
+const STATE_DIR = getKitzStateDir();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

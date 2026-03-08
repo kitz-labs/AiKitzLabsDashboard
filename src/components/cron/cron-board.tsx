@@ -154,7 +154,7 @@ export function CronBoard({ variant = 'embedded' }: { variant?: 'page' | 'embedd
     setTemplateId('');
     setEditJson(JSON.stringify({
       id: 'new-job-id',
-      agentId: 'hermes',
+      agentId: 'kitz',
       name: 'New Cron Job',
       enabled: true,
       schedule: { kind: 'cron', expr: '0 9 * * 1-5', tz: 'UTC' },
@@ -177,7 +177,7 @@ export function CronBoard({ variant = 'embedded' }: { variant?: 'page' | 'embedd
     setEditMode('edit');
     setEditJobId(job.id);
     setTemplateId('');
-    // Strip transient fields added by the Hermes API enrichment.
+    // Strip transient fields added by the Kitz API enrichment.
     const rest: Record<string, unknown> = { ...job };
     delete rest.lastRun;
     delete rest.lastResult;

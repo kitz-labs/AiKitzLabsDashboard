@@ -115,7 +115,7 @@ export async function POST(request: Request) {
   if (auth) return auth;
   if (!allowPolicyWrite()) {
     return NextResponse.json(
-      { error: 'Policy write disabled (set HERMES_ALLOW_POLICY_WRITE=true to enable)' },
+      { error: 'Policy write disabled (set KITZ_ALLOW_POLICY_WRITE=true to enable)' },
       { status: 403 },
     );
   }

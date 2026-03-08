@@ -84,12 +84,12 @@ export async function GET(request: Request) {
   const { logsDir } = resolveOpenClawPaths(instance);
 
   const lockFile =
-    process.env.HERMES_DEPLOY_LOCK_FILE?.trim() || '/tmp/hermes-dashboard-deploy.lock';
+    process.env.KITZ_DEPLOY_LOCK_FILE?.trim() || '/tmp/kitz-dashboard-deploy.lock';
   const logDir =
-    process.env.HERMES_DEPLOY_LOG_DIR?.trim() || path.join(logsDir, 'deploy');
-  const scriptPath = process.env.HERMES_DEPLOY_SCRIPT_PATH?.trim() || '';
-  const serviceName = process.env.HERMES_SERVICE_NAME?.trim() || 'hermes-dashboard.service';
-  const openclawBin = process.env.HERMES_ADMIN_CLI || process.env.OPENCLAW_BIN || 'openclaw';
+    process.env.KITZ_DEPLOY_LOG_DIR?.trim() || path.join(logsDir, 'deploy');
+  const scriptPath = process.env.KITZ_DEPLOY_SCRIPT_PATH?.trim() || '';
+  const serviceName = process.env.KITZ_SERVICE_NAME?.trim() || 'kitz-dashboard.service';
+  const openclawBin = process.env.KITZ_ADMIN_CLI || process.env.OPENCLAW_BIN || 'openclaw';
 
   try {
     const running = scriptPath

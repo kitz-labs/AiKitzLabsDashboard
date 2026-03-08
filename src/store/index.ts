@@ -336,7 +336,7 @@ export const useDashboard = create<DashboardState>()(persist((set, get) => ({
     },
   })),
 }), {
-  name: 'hermes-dashboard',
+  name: 'kitz-dashboard',
   merge: (persistedState, currentState) => {
     const persisted = (persistedState as Partial<DashboardState> | undefined) ?? {};
     const persistedCoding = persisted.coding as Partial<CodingState> | undefined;

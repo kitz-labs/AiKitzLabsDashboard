@@ -12,7 +12,7 @@ Run CRM, outreach, content, analytics, automation workflows, and the new in-app 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org/)
 [![SQLite](https://img.shields.io/badge/SQLite-local-003B57?logo=sqlite&logoColor=white)](https://sqlite.org/)
 
-![AI Kitz Labs Dashboard Overview](./public/hermes-dashboard-mission-control.png)
+![AI Kitz Labs Dashboard Overview](./public/kitz-dashboard-mission-control.png)
 
 </div>
 
@@ -34,10 +34,10 @@ AI Kitz Labs Dashboard is built for operator-led AI marketing systems where you 
 ## Screenshots
 
 ### Overview
-![Hermes Dashboard CRM](./public/hermes-dashboard-mission-control.png)
+![Kitz Dashboard CRM](./public/kitz-dashboard-mission-control.png)
 
 ### CRM
-![Hermes Dashboard Overview](./public/hermes-dashboard-overview.png)
+![Kitz Dashboard Overview](./public/kitz-dashboard-overview.png)
 
 
 
@@ -100,7 +100,7 @@ pnpm dev
 - proposed file content draft
 - backend-generated diff preview
 - approval queue with approve / reject flow
-- approved changes can now be applied when `HERMES_ALLOW_WORKSPACE_WRITE=true`
+- approved changes can now be applied when `KITZ_ALLOW_WORKSPACE_WRITE=true`
 - rollback and diff history are available for applied coding file changes
 
 ## Live Mail Workspace
@@ -126,7 +126,7 @@ The `Mail` page now supports:
 Optional backend storage directory:
 
 ```bash
-HERMES_CODING_STORAGE_DIR=./state/coding
+KITZ_CODING_STORAGE_DIR=./state/coding
 ```
 
 ## Project Status
@@ -150,11 +150,11 @@ HERMES_CODING_STORAGE_DIR=./state/coding
 ### Security Considerations
 
 - Change seeded credentials (`AUTH_USER`, `AUTH_PASS`, `API_KEY`) before network deployment
-- Keep host lock enabled unless you explicitly need broader access (`HERMES_HOST_LOCK=local` by default)
+- Keep host lock enabled unless you explicitly need broader access (`KITZ_HOST_LOCK=local` by default)
 - Keep writeback flags disabled unless required:
-  - `HERMES_ALLOW_POLICY_WRITE=false`
-  - `HERMES_ALLOW_CRON_WRITE=false`
-  - `HERMES_ALLOW_WORKSPACE_WRITE=false`
+  - `KITZ_ALLOW_POLICY_WRITE=false`
+  - `KITZ_ALLOW_CRON_WRITE=false`
+  - `KITZ_ALLOW_WORKSPACE_WRITE=false`
 - Never commit real credentials or personal data
 
 ## Architecture
@@ -180,21 +180,21 @@ See [`.env.example`](.env.example) for the full list.
 
 ### OpenClaw / Multi-instance
 
-- `HERMES_OPENCLAW_HOME`
-- `HERMES_DEFAULT_INSTANCE`
-- `HERMES_OPENCLAW_INSTANCES` (optional JSON array for multi-instance)
+- `KITZ_OPENCLAW_HOME`
+- `KITZ_DEFAULT_INSTANCE`
+- `KITZ_OPENCLAW_INSTANCES` (optional JSON array for multi-instance)
 
 ### Optional 1Password Runtime Overlay
 
-- `HERMES_1PASSWORD_MODE=off|auto|required` (`auto` is default behavior)
-- `HERMES_OP_ENV_FILE=/etc/hermes-dashboard/hermes-dashboard.op.env`
-- Example mapping: `ops/1password/hermes-dashboard.op.env.example`
+- `KITZ_1PASSWORD_MODE=off|auto|required` (`auto` is default behavior)
+- `KITZ_OP_ENV_FILE=/etc/kitz-dashboard/kitz-dashboard.op.env`
+- Example mapping: `ops/1password/kitz-dashboard.op.env.example`
 
 ### Host Access Lock
 
-- `HERMES_HOST_LOCK=local` (default)
-- `HERMES_HOST_LOCK=off`
-- `HERMES_HOST_LOCK=host1,host2`
+- `KITZ_HOST_LOCK=local` (default)
+- `KITZ_HOST_LOCK=off`
+- `KITZ_HOST_LOCK=host1,host2`
 
 ## Development
 

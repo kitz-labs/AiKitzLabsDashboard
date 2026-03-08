@@ -29,7 +29,7 @@ The VPS must already have:
 
 - Docker installed
 - The repo cloned locally
-- `ops/docker/hermes-dashboard.env` filled out
+- `ops/docker/kitz-dashboard.env` filled out
 - Nginx or another proxy forwarding traffic to `127.0.0.1:3000`
 
 ## SSH key setup

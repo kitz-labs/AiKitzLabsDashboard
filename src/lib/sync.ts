@@ -1,9 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { getDb } from './db';
-import { getHermesStateDir } from '@/lib/hermes-state';
+import { getKitzStateDir } from '@/lib/kitz-state';
 
-const STATE_DIR = getHermesStateDir();
+const STATE_DIR = getKitzStateDir();
 const SYNC_INTERVAL = 30_000; // 30 seconds
 
 let syncTimer: ReturnType<typeof setInterval> | null = null;

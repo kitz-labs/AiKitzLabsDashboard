@@ -144,7 +144,7 @@ export async function PUT(request: Request) {
   const auth = requireApiEditor(request);
   if (auth) return auth;
   if (!allowCronWrite()) {
-    return NextResponse.json({ error: 'Cron writes are disabled (set HERMES_ALLOW_CRON_WRITE=true)' }, { status: 403 });
+    return NextResponse.json({ error: 'Cron writes are disabled (set KITZ_ALLOW_CRON_WRITE=true)' }, { status: 403 });
   }
 
   const actor = requireUser(request);

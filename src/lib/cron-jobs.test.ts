@@ -14,7 +14,7 @@ import {
   writeCronJobsFile,
 } from './cron-jobs';
 
-const tempDir = mkdtempSync(path.join(tmpdir(), 'hermes-cron-jobs-test-'));
+const tempDir = mkdtempSync(path.join(tmpdir(), 'kitz-cron-jobs-test-'));
 
 after(() => {
   rmSync(tempDir, { recursive: true, force: true });

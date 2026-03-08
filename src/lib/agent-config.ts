@@ -68,10 +68,10 @@ type AgentStaticMeta = {
   cronJobs?: CronJob[];
 };
 
-const DEFAULT_ORDER = ['main', 'hermes', 'apollo', 'athena', 'metis', 'kb-manager'];
+const DEFAULT_ORDER = ['main', 'kitz', 'apollo', 'athena', 'metis', 'kb-manager'];
 
 const AGENT_ID_ALIASES: Record<string, string> = {
-  marketing: 'hermes',
+  marketing: 'kitz',
   sales: 'apollo',
   knowledge: 'athena',
   analytics: 'metis',
@@ -86,8 +86,8 @@ const DEFAULT_STATIC_META: Record<string, AgentStaticMeta> = {
     role: 'Orchestrator',
     description: 'Primary agent that coordinates the rest of the system.',
   },
-  hermes: {
-    name: 'Hermes',
+  kitz: {
+    name: 'Kitz',
     emoji: '\u{1F3DB}\u{FE0F}',
     role: 'Marketing Engine',
     description:
@@ -192,7 +192,7 @@ function discoverAgentIdsFromFs(agentsDir: string): string[] {
         continue;
       }
 
-      // Many deployments store canonical agent ids as symlinks (e.g. hermes -> marketing).
+      // Many deployments store canonical agent ids as symlinks (e.g. kitz -> marketing).
       if (d.isSymbolicLink()) {
         try {
           if (fs.statSync(fullPath).isDirectory()) out.push(d.name);
@@ -209,11 +209,11 @@ function discoverAgentIdsFromFs(agentsDir: string): string[] {
 }
 
 function loadStaticMeta(): Record<string, AgentStaticMeta> {
-  const useDefault = String(process.env.HERMES_USE_DEFAULT_AGENT_META ?? 'false')
+  const useDefault = String(process.env.KITZ_USE_DEFAULT_AGENT_META ?? 'false')
     .trim()
     .toLowerCase() !== 'false';
 
-  const jsonRaw = process.env.HERMES_AGENT_META_JSON?.trim();
+  const jsonRaw = process.env.KITZ_AGENT_META_JSON?.trim();
   if (jsonRaw) {
     try {
       const parsed = JSON.parse(jsonRaw) as unknown;
@@ -223,7 +223,7 @@ function loadStaticMeta(): Record<string, AgentStaticMeta> {
     }
   }
 
-  const filePath = process.env.HERMES_AGENT_META_PATH?.trim();
+  const filePath = process.env.KITZ_AGENT_META_PATH?.trim();
   if (filePath) {
     try {
       const raw = fs.readFileSync(filePath, 'utf-8');
@@ -320,11 +320,11 @@ export function getAgent(instanceId: string | undefined, id: string): AgentDefin
 
 // Map activity_log actions to agent + skill (dashboard-local semantics).
 export const ACTION_TO_AGENT: Record<string, { agent: string; skill: string }> = {
-  post: { agent: 'hermes', skill: 'content-engine' },
-  engage: { agent: 'hermes', skill: 'social-engagement' },
-  research: { agent: 'hermes', skill: 'x-research' },
+  post: { agent: 'kitz', skill: 'content-engine' },
+  engage: { agent: 'kitz', skill: 'social-engagement' },
+  research: { agent: 'kitz', skill: 'x-research' },
   discover: { agent: 'apollo', skill: 'cold-outreach' },
   send: { agent: 'apollo', skill: 'cold-outreach' },
   triage: { agent: 'apollo', skill: 'reply-triage' },
-  alert: { agent: 'hermes', skill: 'reporting' },
+  alert: { agent: 'kitz', skill: 'reporting' },
 };

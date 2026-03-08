@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 
-const ADMIN_CLI = process.env.HERMES_ADMIN_CLI || process.env.OPENCLAW_BIN || 'openclaw';
+const ADMIN_CLI = process.env.KITZ_ADMIN_CLI || process.env.OPENCLAW_BIN || 'openclaw';
 
 interface CommandResult {
   stdout: string;

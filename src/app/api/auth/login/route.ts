@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authenticate, createSession, destroySession, seedAdmin } from '@/lib/auth';
 
-const SESSION_COOKIE = 'hermes-session';
+const SESSION_COOKIE = 'kitz-session';
 const SESSION_MAX_AGE = 7 * 24 * 60 * 60;
 
 function shouldUseSecureCookies(request: Request): boolean {
@@ -42,7 +42,7 @@ export async function POST(request: Request) {
 
   // Invalidate any previously presented session token to reduce session fixation risk.
   const cookie = request.headers.get('cookie') || '';
-  const existingMatch = cookie.match(/(?:^|;\s*)hermes-session=([^;]*)/);
+  const existingMatch = cookie.match(/(?:^|;\s*)kitz-session=([^;]*)/);
   const existingToken = existingMatch ? decodeURIComponent(existingMatch[1]) : null;
   if (existingToken) {
     destroySession(existingToken);

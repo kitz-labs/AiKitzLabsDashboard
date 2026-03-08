@@ -35,7 +35,7 @@ yarn-error.log*
 .env
 .env.local
 .env.production
-ops/docker/hermes-dashboard.env
+ops/docker/kitz-dashboard.env
 
 # sqlite
 *.db
@@ -51,7 +51,7 @@ next-env.d.ts
 
 # claude-mem auto-generated
 **/CLAUDE.md
-hermes-seed-fix.bundle
+kitz-seed-fix.bundle
 
 # runtime state
 /state/

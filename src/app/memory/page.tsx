@@ -9,8 +9,8 @@ import type { MemoryAlertsPayload, MemoryDriftPayload, MemoryHealthPayload } fro
 import { useDashboard } from '@/store';
 import { t } from '@/lib/i18n';
 
-type HermesInstance = { id: string; label: string };
-type InstancesResponse = { default_instance: string; instances: HermesInstance[] };
+type KitzInstance = { id: string; label: string };
+type InstancesResponse = { default_instance: string; instances: KitzInstance[] };
 
 type MemoryEffectPayload = {
   instance: string;
@@ -65,7 +65,7 @@ function severityClass(sev: string | undefined): string {
 
 export default function MemoryPage() {
   const { language } = useDashboard();
-  const [instances, setInstances] = useState<HermesInstance[]>([]);
+  const [instances, setInstances] = useState<KitzInstance[]>([]);
   const [instanceId, setInstanceId] = useState('');
   const [instancesError, setInstancesError] = useState<string | null>(null);
 

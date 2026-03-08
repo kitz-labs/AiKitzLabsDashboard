@@ -8,14 +8,14 @@ Best fit: a small Linux VPS such as Hostinger, with Nginx in front of Docker.
 
 - `Dockerfile` builds the standalone Next.js runtime.
 - `docker-compose.yml` starts the app with a persistent named volume.
-- `ops/docker/hermes-dashboard.env.example` contains the runtime secrets/config template.
+- `ops/docker/kitz-dashboard.env.example` contains the runtime secrets/config template.
 
 ## First-time setup
 
 Copy the example env file and edit the secrets:
 
 ```bash
-cp ops/docker/hermes-dashboard.env.example ops/docker/hermes-dashboard.env
+cp ops/docker/kitz-dashboard.env.example ops/docker/kitz-dashboard.env
 ```
 
 Required values:
@@ -50,9 +50,9 @@ docker compose down
 
 ## Persisted data
 
-The named volume `hermes-data` stores:
+The named volume `kitz-data` stores:
 
-- `/data/hermes.db`
+- `/data/kitz.db`
 - `/data/state`
 
 ## Reverse proxy

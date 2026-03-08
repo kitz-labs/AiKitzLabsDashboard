@@ -2,10 +2,10 @@ import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
 import { seedChatMessages } from './seed-chat';
-import { getHermesStateDir } from './hermes-state';
+import { getKitzStateDir } from './kitz-state';
 
 const DB_PATH =
-  process.env.HERMES_DB_PATH || path.join(getHermesStateDir(), 'hermes.db');
+  process.env.KITZ_DB_PATH || path.join(getKitzStateDir(), 'kitz.db');
 
 export function getDbPath(): string {
   return DB_PATH;

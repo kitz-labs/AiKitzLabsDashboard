@@ -222,7 +222,7 @@ export async function POST(req: NextRequest) {
   const auth = requireApiEditor(req as unknown as Request);
   if (auth) return auth;
   if (!allowWorkspaceWrite()) {
-    return NextResponse.json({ error: 'Workspace writes are disabled (set HERMES_ALLOW_WORKSPACE_WRITE=true)' }, { status: 403 });
+    return NextResponse.json({ error: 'Workspace writes are disabled (set KITZ_ALLOW_WORKSPACE_WRITE=true)' }, { status: 403 });
   }
 
   const actor = requireUser(req as unknown as Request);
@@ -268,7 +268,7 @@ export async function PUT(req: NextRequest) {
   const auth = requireApiEditor(req as unknown as Request);
   if (auth) return auth;
   if (!allowWorkspaceWrite()) {
-    return NextResponse.json({ error: 'Workspace writes are disabled (set HERMES_ALLOW_WORKSPACE_WRITE=true)' }, { status: 403 });
+    return NextResponse.json({ error: 'Workspace writes are disabled (set KITZ_ALLOW_WORKSPACE_WRITE=true)' }, { status: 403 });
   }
 
   const actor = requireUser(req as unknown as Request);
@@ -319,7 +319,7 @@ export async function DELETE(req: NextRequest) {
   const auth = requireApiEditor(req as unknown as Request);
   if (auth) return auth;
   if (!allowWorkspaceWrite()) {
-    return NextResponse.json({ error: 'Workspace writes are disabled (set HERMES_ALLOW_WORKSPACE_WRITE=true)' }, { status: 403 });
+    return NextResponse.json({ error: 'Workspace writes are disabled (set KITZ_ALLOW_WORKSPACE_WRITE=true)' }, { status: 403 });
   }
 
   const actor = requireUser(req as unknown as Request);

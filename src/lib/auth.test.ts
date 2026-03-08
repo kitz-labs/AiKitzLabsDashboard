@@ -4,10 +4,10 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const tempDir = mkdtempSync(path.join(tmpdir(), 'hermes-auth-test-'));
-const dbPath = path.join(tempDir, 'hermes-test.db');
+const tempDir = mkdtempSync(path.join(tmpdir(), 'kitz-auth-test-'));
+const dbPath = path.join(tempDir, 'kitz-test.db');
 
-process.env.HERMES_DB_PATH = dbPath;
+process.env.KITZ_DB_PATH = dbPath;
 process.env.AUTH_USER = 'admin_test';
 process.env.AUTH_PASS = 'super-secure-pass';
 process.env.API_KEY = 'test-api-key';
@@ -78,7 +78,7 @@ test('session lifecycle validates and invalidates correctly', () => {
 
 test('requireUser throws on invalid session cookie', () => {
   const request = new Request('http://localhost/api/test', {
-    headers: { cookie: 'hermes-session=invalid-token' },
+    headers: { cookie: 'kitz-session=invalid-token' },
   });
 
   assert.equal(getUserFromRequest(request), null);

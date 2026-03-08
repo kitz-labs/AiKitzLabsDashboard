@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 
-import { getHermesStateDir } from '@/lib/hermes-state';
+import { getKitzStateDir } from '@/lib/kitz-state';
 
 type JsonRow = Record<string, unknown>;
 type WrappedArray = { leads: JsonRow[] } & Record<string, unknown>;
 
 function getStateDir(): string {
-  return getHermesStateDir();
+  return getKitzStateDir();
 }
 
 function safeReadJson(filePath: string): unknown {
@@ -38,7 +38,7 @@ function getArrayContainer(
 }
 
 /**
- * Write a status change back to a JSON state file so the Hermes agent picks it up.
+ * Write a status change back to a JSON state file so the Kitz agent picks it up.
  * Reads the file, finds the item by id, updates the status, writes back.
  * Silently no-ops if the file doesn't exist (local dev without state files).
  */

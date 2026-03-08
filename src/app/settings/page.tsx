@@ -68,7 +68,7 @@ interface MeResponse {
   user?: { id: number; username: string; role: Role };
 }
 
-interface HermesInstance {
+interface KitzInstance {
   id: string;
   label: string;
 }
@@ -209,7 +209,7 @@ export default function SettingsPage() {
   } = useDashboard();
   const dashboardVersion = pkg.version || 'dev';
   const roleMatrix = getRoleMatrix();
-  const [instances, setInstances] = useState<HermesInstance[]>([]);
+  const [instances, setInstances] = useState<KitzInstance[]>([]);
   const [syncInfo, setSyncInfo] = useState<SyncInfo | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [clearing, setClearing] = useState(false);
@@ -337,7 +337,7 @@ export default function SettingsPage() {
 
       // Discover configured OpenClaw instances from the server so the dashboard
       // can be used as a template across different deployments.
-      let discovered: HermesInstance[] = [];
+      let discovered: KitzInstance[] = [];
       try {
         const res = await fetch('/api/instances', { cache: 'no-store' });
         const data = await res.json();
@@ -1673,7 +1673,7 @@ export default function SettingsPage() {
           <div className="space-y-2 text-xs">
             <div className="flex items-center justify-between py-1">
               <span className="text-muted-foreground">Dashboard</span>
-            <span>Hermes Dashboard v{dashboardVersion}</span>
+            <span>Kitz Dashboard v{dashboardVersion}</span>
             </div>
             <div className="flex items-center justify-between py-1">
               <span className="text-muted-foreground">Runtime</span>

@@ -24,12 +24,12 @@ ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 RUN groupadd --system --gid 1001 nodejs \
-  && useradd --system --uid 1001 --gid nodejs hermes \
+  && useradd --system --uid 1001 --gid nodejs kitz \
   && mkdir -p /data/state/coding \
-  && chown -R hermes:nodejs /app /data
-COPY --from=builder --chown=hermes:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=hermes:nodejs /app/.next/static ./.next/static
-COPY --from=builder --chown=hermes:nodejs /app/public ./public
-USER hermes
+  && chown -R kitz:nodejs /app /data
+COPY --from=builder --chown=kitz:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=kitz:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=kitz:nodejs /app/public ./public
+USER kitz
 EXPOSE 3000
 CMD ["node", "server.js"]

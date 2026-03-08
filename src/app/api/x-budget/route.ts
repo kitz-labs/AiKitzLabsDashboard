@@ -2,9 +2,9 @@ import { NextResponse } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
 import { requireApiUser } from '@/lib/api-auth';
-import { getHermesStateDir } from '@/lib/hermes-state';
+import { getKitzStateDir } from '@/lib/kitz-state';
 
-const STATE_DIR = getHermesStateDir();
+const STATE_DIR = getKitzStateDir();
 
 export async function GET(request: Request) {
   const auth = requireApiUser(request as Request);

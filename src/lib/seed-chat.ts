@@ -12,35 +12,35 @@ export function seedChatMessages(db: Database.Database) {
   const hour = 3600;
 
   const messages = [
-    // Hermes → Apollo: Lead signal handoff
+    // Kitz → Apollo: Lead signal handoff
     {
-      conversation_id: 'hermes_apollo',
-      from_agent: 'hermes',
+      conversation_id: 'kitz_apollo',
+      from_agent: 'kitz',
       to_agent: 'apollo',
       content: 'Found high-intent signal on X: @sarahdev is frustrated with manual outbound — "spending 4h/day on cold emails with 2% reply rate." Company is 50-200 employees, B2B SaaS. Matches our ICP perfectly.',
       message_type: 'text',
       created_at: now - 8 * hour,
     },
     {
-      conversation_id: 'hermes_apollo',
+      conversation_id: 'kitz_apollo',
       from_agent: 'apollo',
-      to_agent: 'hermes',
+      to_agent: 'kitz',
       content: 'Received. Scored as **Tier A** lead (ICP match: 92%). Starting 3-touch personalized sequence. First email focuses on the "4h/day manual outbound" pain point with our automation angle.',
       message_type: 'text',
       created_at: now - 7 * hour - 45 * 60,
     },
     {
-      conversation_id: 'hermes_apollo',
-      from_agent: 'hermes',
+      conversation_id: 'kitz_apollo',
+      from_agent: 'kitz',
       to_agent: 'apollo',
-      content: 'Good. I\'ll engage with her X thread first — drop a value-add reply about outbound automation benchmarks. That way when your email lands, she\'ll recognize the Hermes name.',
+      content: 'Good. I\'ll engage with her X thread first — drop a value-add reply about outbound automation benchmarks. That way when your email lands, she\'ll recognize the Kitz name.',
       message_type: 'text',
       created_at: now - 7 * hour - 30 * 60,
     },
     {
-      conversation_id: 'hermes_apollo',
+      conversation_id: 'kitz_apollo',
       from_agent: 'apollo',
-      to_agent: 'hermes',
+      to_agent: 'kitz',
       content: 'Smart coordination. Sequence scheduled: Email 1 tomorrow 9 AM, follow-up in 3 days. Subject: "Re: outbound automation." Let me know if she responds to your X reply — I\'ll adjust tone accordingly.',
       message_type: 'text',
       created_at: now - 7 * hour - 15 * 60,
@@ -48,36 +48,36 @@ export function seedChatMessages(db: Database.Database) {
 
     // Apollo daily triage report
     {
-      conversation_id: 'hermes_apollo',
+      conversation_id: 'kitz_apollo',
       from_agent: 'apollo',
-      to_agent: 'hermes',
+      to_agent: 'kitz',
       content: 'Evening triage complete. 3 new replies:\n- Marcus Rivera @ TechScale: **Interested** — asking for demo. Moving to Stage 3.\n- Priya Sharma @ DataFlow: Objection (budget). Sending case study.\n- 1 bounce from old domain. Added to suppression.',
       message_type: 'text',
       created_at: now - 3 * hour,
     },
     {
-      conversation_id: 'hermes_apollo',
-      from_agent: 'hermes',
+      conversation_id: 'kitz_apollo',
+      from_agent: 'kitz',
       to_agent: 'apollo',
       content: 'Marcus Rivera demo request is great — he was engaging with our LinkedIn content last week. I\'ll draft a LinkedIn post tagging DevTools community tonight, might create social proof before his demo.',
       message_type: 'text',
       created_at: now - 2 * hour - 50 * 60,
     },
 
-    // Direct conversation with Hermes
+    // Direct conversation with Kitz
     {
-      conversation_id: 'agent_hermes',
+      conversation_id: 'agent_kitz',
       from_agent: 'nyk',
-      to_agent: 'hermes',
+      to_agent: 'kitz',
       content: 'How is the content calendar looking for this week?',
       message_type: 'text',
       created_at: now - 6 * hour,
     },
     {
-      conversation_id: 'agent_hermes',
-      from_agent: 'hermes',
+      conversation_id: 'agent_kitz',
+      from_agent: 'kitz',
       to_agent: 'nyk',
-      content: 'Calendar is loaded for the week:\n\n**Monday**: LinkedIn carousel — "5 Experiments Every DevTool Founder Should Run"\n**Tuesday**: X thread on outbound automation benchmarks\n**Wednesday**: LinkedIn post — Hermes case study teaser\n**Thursday**: X engagement day (replies + QTs to ICP conversations)\n**Friday**: Weekly metrics thread + experiment results\n\n3 posts are drafted and pending your approval in the content queue.',
+      content: 'Calendar is loaded for the week:\n\n**Monday**: LinkedIn carousel — "5 Experiments Every DevTool Founder Should Run"\n**Tuesday**: X thread on outbound automation benchmarks\n**Wednesday**: LinkedIn post — Kitz case study teaser\n**Thursday**: X engagement day (replies + QTs to ICP conversations)\n**Friday**: Weekly metrics thread + experiment results\n\n3 posts are drafted and pending your approval in the content queue.',
       message_type: 'text',
       created_at: now - 5 * hour - 45 * 60,
     },
