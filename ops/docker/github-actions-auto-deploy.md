@@ -1,6 +1,6 @@
 # GitHub Actions Auto-Deploy
 
-This workflow deploys automatically to your VPS after the `CI` workflow passes on `main`.
+This workflow deploys automatically to your VPS after the `Publish Image` workflow pushes a fresh image on `main`.
 
 ## Workflow file
 
@@ -30,6 +30,7 @@ The VPS must already have:
 - Docker installed
 - The repo cloned locally
 - `ops/docker/kitz-dashboard.env` filled out
+- Access to pull `ghcr.io/kitz-labs/aikitz-dashboard:latest` (public package, or `docker login ghcr.io` if you keep it private)
 - Nginx or another proxy forwarding traffic to `127.0.0.1:3000`
 
 ## SSH key setup
@@ -55,7 +56,7 @@ After a successful push to `main`, the workflow:
 1. Opens an SSH connection to the VPS
 2. Changes into `VPS_APP_DIR`
 3. Fetches and hard-resets to `origin/main`
-4. Runs `bash ops/docker/deploy.sh`
+4. Pulls the latest GHCR-backed image via `bash ops/docker/deploy.sh`
 5. Checks that `http://127.0.0.1:3000` responds
 
 ## Manual deploy
@@ -67,4 +68,5 @@ You can also trigger the workflow manually from the **Actions** tab using `workf
 - Check the `Deploy VPS` workflow logs in GitHub Actions
 - Verify the SSH key can log in non-interactively
 - Verify `VPS_APP_DIR` points to the repo root on the server
+- If the GHCR package is private, run `docker login ghcr.io` on the VPS first
 - Run `bash ops/docker/deploy.sh` manually once on the VPS before enabling auto-deploy

@@ -6,8 +6,8 @@ Best fit: a small Linux VPS such as Hostinger, with Nginx in front of Docker.
 
 ## Files
 
-- `Dockerfile` builds the app with `next build` and starts it with `next start`.
-- `docker-compose.yml` starts the app with a persistent named volume.
+- `Dockerfile` is used by GitHub Actions to build the production image.
+- `docker-compose.yml` pulls `ghcr.io/kitz-labs/aikitz-dashboard:latest` and starts it with a persistent named volume.
 - `ops/docker/kitz-dashboard.env.example` contains the runtime secrets/config template.
 
 ## First-time setup
@@ -27,7 +27,8 @@ Required values:
 ## Start
 
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
 Or use the included helper:
@@ -80,7 +81,8 @@ For later updates on the server:
 
 ```bash
 git pull --ff-only
-docker compose up -d --build
+docker compose pull
+docker compose up -d --force-recreate --remove-orphans
 docker compose logs -f dashboard
 ```
 
@@ -90,12 +92,13 @@ Or simply:
 bash ops/docker/deploy.sh
 ```
 
-This VPS setup uses the plain Next.js production server with `next build` and `next start`.
+This VPS setup uses a prebuilt GHCR image that runs the plain Next.js production server with `next start`.
 
 ## Troubleshooting
 
 - `docker compose logs -f dashboard` to inspect startup errors
 - `docker compose ps` to verify the container is up
+- `docker compose pull` to confirm the VPS can access `ghcr.io/kitz-labs/aikitz-dashboard:latest`
 - `curl http://127.0.0.1:3000` on the VPS to verify the app before checking Nginx
-- If Nginx returns `502`, verify the container actually built and is listening on `3000`
+- If Nginx returns `502`, verify the container actually pulled and is listening on `3000`
 - If GitHub auto-deploy fails, inspect `.github/workflows/deploy-vps.yml` and the Actions logs

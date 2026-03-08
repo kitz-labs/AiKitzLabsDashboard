@@ -23,8 +23,11 @@ fi
 echo "[deploy] Pulling latest code"
 git pull --ff-only
 
-echo "[deploy] Building and starting containers"
-docker compose up -d --build
+echo "[deploy] Pulling latest dashboard image"
+docker compose pull dashboard
+
+echo "[deploy] Starting containers"
+docker compose up -d --force-recreate --remove-orphans
 
 echo "[deploy] Current container status"
 docker compose ps

@@ -31,10 +31,11 @@ Fill in at least:
 ## 4. Start the app
 
 ```bash
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
-This setup uses plain Next.js production mode (`next build` + `next start`) to keep VPS hosting simple.
+This setup pulls a prebuilt GHCR image and runs the plain Next.js production server to keep VPS hosting simple.
 
 ## 5. Check status
 
@@ -61,6 +62,12 @@ sudo certbot --nginx -d dashboard.example.com
 
 ```bash
 bash ops/docker/deploy.sh
+```
+
+If your GHCR package stays private, log in once on the VPS first:
+
+```bash
+docker login ghcr.io
 ```
 
 ## 9. Optional: GitHub Actions auto-deploy

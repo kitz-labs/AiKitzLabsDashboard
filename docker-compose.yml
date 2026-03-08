@@ -1,8 +1,7 @@
 services:
   dashboard:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/kitz-labs/aikitz-dashboard:latest
+    pull_policy: always
     container_name: kitz-dashboard
     restart: unless-stopped
     ports:
