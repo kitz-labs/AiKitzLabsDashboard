@@ -61,7 +61,7 @@ interface OpenClawConfig {
     }>;
   };
   agents?: {
-    defaults?: { model?: unknown; workspace?: unknown };
+    defaults?: { model?: unknown; workspace?: unknown; models?: unknown };
     list?: OpenClawAgent[];
   };
 }
@@ -205,42 +205,68 @@ export function getOpenClawModelCatalog(instanceId?: string): {
   const instance = getInstance(instanceId);
   const { openclawConfigPath } = resolveOpenClawPaths(instance);
   const config = readOpenClawConfig(openclawConfigPath);
-  const providersRaw = config?.models?.providers;
-  if (!providersRaw || typeof providersRaw !== 'object') {
-    return { providers: [], models: [] };
-  }
-
   const providers: OpenClawProviderSummary[] = [];
   const models: OpenClawModelSummary[] = [];
+  const providerCounts = new Map<string, number>();
 
-  for (const [providerId, providerConfig] of Object.entries(providersRaw)) {
-    const providerModels = isRecord(providerConfig) && Array.isArray(providerConfig.models)
-      ? providerConfig.models
-      : [];
+  const providersRaw = config?.models?.providers;
+  if (providersRaw && typeof providersRaw === 'object') {
+    for (const [providerId, providerConfig] of Object.entries(providersRaw)) {
+      const providerModels = isRecord(providerConfig) && Array.isArray(providerConfig.models)
+        ? providerConfig.models
+        : [];
 
-    providers.push({
-      id: providerId,
-      api: isRecord(providerConfig) && typeof providerConfig.api === 'string' ? providerConfig.api : null,
-      baseUrl: isRecord(providerConfig) && typeof providerConfig.baseUrl === 'string' ? providerConfig.baseUrl : null,
-      modelCount: providerModels.length,
-    });
+      providers.push({
+        id: providerId,
+        api: isRecord(providerConfig) && typeof providerConfig.api === 'string' ? providerConfig.api : null,
+        baseUrl: isRecord(providerConfig) && typeof providerConfig.baseUrl === 'string' ? providerConfig.baseUrl : null,
+        modelCount: providerModels.length,
+      });
 
-    for (const modelEntry of providerModels) {
-      if (!isRecord(modelEntry)) continue;
-      const modelId = typeof modelEntry.id === 'string' ? modelEntry.id : null;
-      if (!modelId) continue;
-      const alias = typeof modelEntry.name === 'string'
-        ? modelEntry.name
-        : typeof modelEntry.alias === 'string'
-          ? modelEntry.alias
-          : modelId;
+      for (const modelEntry of providerModels) {
+        if (!isRecord(modelEntry)) continue;
+        const modelId = typeof modelEntry.id === 'string' ? modelEntry.id : null;
+        if (!modelId) continue;
+        const alias = typeof modelEntry.name === 'string'
+          ? modelEntry.name
+          : typeof modelEntry.alias === 'string'
+            ? modelEntry.alias
+            : modelId;
 
+        models.push({
+          id: modelId,
+          provider: providerId,
+          alias,
+        });
+      }
+    }
+  }
+
+  const defaultsModels = config?.agents?.defaults?.models;
+  if (isRecord(defaultsModels)) {
+    for (const [modelId, modelConfig] of Object.entries(defaultsModels)) {
+      if (models.some((entry) => entry.id === modelId)) continue;
+      const providerId = modelId.includes('/') ? modelId.split('/')[0] : 'default';
+      const alias = isRecord(modelConfig) && typeof modelConfig.alias === 'string'
+        ? modelConfig.alias
+        : modelId;
       models.push({
         id: modelId,
         provider: providerId,
         alias,
       });
+      providerCounts.set(providerId, (providerCounts.get(providerId) || 0) + 1);
     }
+  }
+
+  for (const providerId of providerCounts.keys()) {
+    if (providers.some((provider) => provider.id === providerId)) continue;
+    providers.push({
+      id: providerId,
+      api: null,
+      baseUrl: null,
+      modelCount: providerCounts.get(providerId) || 0,
+    });
   }
 
   return { providers, models };
