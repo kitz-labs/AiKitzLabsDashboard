@@ -3,9 +3,9 @@
   "version": "0.2.0",
   "private": false,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
     "build": "next build --webpack",
-    "start": "next start",
+    "start": "next start -p 3000",
     "env:bootstrap": "bash scripts/bootstrap-env.sh",
     "lint": "eslint",
     "seed": "tsx scripts/seed.ts",

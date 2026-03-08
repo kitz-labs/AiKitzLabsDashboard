@@ -1,0 +1,29 @@
+services:
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hermes-dashboard
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./ops/docker/hermes-dashboard.env
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      HERMES_DB_PATH: /data/hermes.db
+      HERMES_STATE_DIR: /data/state
+      HERMES_CODING_STORAGE_DIR: /data/state/coding
+    volumes:
+      - hermes-data:/data
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then((res) => process.exit(res.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  hermes-data:

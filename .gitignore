@@ -35,6 +35,7 @@ yarn-error.log*
 .env
 .env.local
 .env.production
+ops/docker/hermes-dashboard.env
 
 # sqlite
 *.db

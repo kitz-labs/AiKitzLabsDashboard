@@ -1,0 +1,13 @@
+.git
+.gitignore
+.next
+node_modules
+pnpm-store
+.env
+.env.*
+coverage
+playwright-report
+test-results
+ops/1password
+*.log
+.DS_Store

@@ -4,6 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+export PORT="${PORT:-3000}"
+
 "$ROOT/scripts/prepare-standalone.sh"
 
 # Optional 1Password mode:
