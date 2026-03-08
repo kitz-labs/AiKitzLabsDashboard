@@ -4,6 +4,7 @@ import { spawn } from 'node:child_process';
 const ADMIN_CLI = process.env.KITZ_ADMIN_CLI || process.env.OPENCLAW_BIN || 'openclaw';
 const OPENCLAW_CONTAINER = process.env.KITZ_OPENCLAW_CONTAINER?.trim() || '';
 const DOCKER_SOCKET = process.env.KITZ_OPENCLAW_DOCKER_SOCKET?.trim() || '/var/run/docker.sock';
+const DOCKER_API_VERSION = process.env.KITZ_DOCKER_API_VERSION?.trim() || '1.44';
 const DEFAULT_AGENT = process.env.KITZ_OPENCLAW_DEFAULT_AGENT?.trim() || 'main';
 
 interface CommandResult {
@@ -17,7 +18,7 @@ async function dockerSocketRequest(path: string, init?: { method?: string; body?
     const request = http.request(
       {
         socketPath: DOCKER_SOCKET,
-        path: `/v1.41${path}`,
+        path: `/v${DOCKER_API_VERSION}${path}`,
         method: init?.method || 'GET',
         headers: { 'Content-Type': 'application/json' },
       },
