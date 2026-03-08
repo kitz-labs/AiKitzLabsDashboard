@@ -8,6 +8,12 @@ import type { ChatMessage } from '@/types';
 
 type PanelVariant = 'workspace' | 'popup';
 
+type CodingAgentPanelCopy = {
+	title?: string;
+	subtitle?: string;
+	popupTitle?: string;
+};
+
 type CliModuleOption = {
 	id: string;
 	label: { en: string; de: string };
@@ -95,7 +101,13 @@ function isAgentMessage(message: ChatMessage) {
 	return message.from_agent === 'orchestrator';
 }
 
-export function CodingAgentPanel({ variant = 'workspace' }: { variant?: PanelVariant }) {
+export function CodingAgentPanel({
+	variant = 'workspace',
+	copyOverrides,
+}: {
+	variant?: PanelVariant;
+	copyOverrides?: CodingAgentPanelCopy;
+}) {
 	const language = useDashboard((state) => state.language);
 	const coding = useDashboard((state) => state.coding);
 	const updateCoding = useDashboard((state) => state.updateCoding);
@@ -104,7 +116,7 @@ export function CodingAgentPanel({ variant = 'workspace' }: { variant?: PanelVar
 	const [sending, setSending] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const messagesRef = useRef<HTMLDivElement>(null);
-	const ui = copy(language);
+	const ui = { ...copy(language), ...copyOverrides };
 	const compact = variant === 'popup';
 
 	const selectedModules = coding.selectedCliModules || [];

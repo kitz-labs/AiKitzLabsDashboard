@@ -1126,7 +1126,16 @@ export default function CodingPage() {
               </div>
             </div>
 
-            <CodingAgentPanel variant="workspace" />
+            <CodingAgentPanel
+              variant="workspace"
+              copyOverrides={{
+                title: 'Copilot Coding Agent',
+                subtitle:
+                  language === 'de'
+                    ? 'Direkte Chat-Steuerung für den Copilot Coding Agent mit CLI-, SSH- und Workspace-Kontext.'
+                    : 'Direct chat control for the Copilot Coding Agent with CLI, SSH, and workspace context.',
+              }}
+            />
 
             <div className="grid grid-cols-1 xl:grid-cols-[1fr] gap-4">
               <div className="rounded-xl border border-border/40 bg-background/80 p-4 space-y-3">
