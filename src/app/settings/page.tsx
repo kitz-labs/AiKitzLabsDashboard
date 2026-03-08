@@ -1690,7 +1690,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between py-1">
               <span className="text-muted-foreground">Source</span>
             <a
-              href="https://github.com/builderz-labs/hermes-dashboard"
+              href="https://github.com/kitz-labs/AiKitzLabsDashboard"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline flex items-center gap-1"

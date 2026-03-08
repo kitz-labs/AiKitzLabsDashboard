@@ -221,4 +221,4 @@ Export excludes sensitive/runtime artifacts like `.env*`, database files, `.next
 
 ## License
 
-[MIT](LICENSE) © 2026 [Builderz Labs](https://github.com/builderz-labs)
+[MIT](LICENSE) © 2026 [kitz-labs](https://github.com/kitz-labs)
