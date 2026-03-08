@@ -1557,7 +1557,7 @@ export default function SettingsPage() {
                   value={createPassword}
                   onChange={(e) => setCreatePassword(e.target.value)}
                   className="px-3 py-2 rounded-lg border border-border bg-background text-sm"
-                  placeholder="password (min 10 chars)"
+                  placeholder="password (min 7 chars)"
                   type="password"
                   required
                 />

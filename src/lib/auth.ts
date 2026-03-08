@@ -5,6 +5,7 @@ const SALT_LENGTH = 16;
 const KEY_LENGTH = 32;
 const SCRYPT_COST = 16384;
 const SESSION_DURATION = 7 * 24 * 60 * 60; // 7 days
+const MIN_PASSWORD_LENGTH = 7;
 
 export interface User {
   id: number;
@@ -143,8 +144,8 @@ export function seedAdmin(): void {
   if (username.length < 3) {
     throw new Error('AUTH_USER must be at least 3 characters');
   }
-  if (password.length < 10) {
-    throw new Error('AUTH_PASS must be at least 10 characters');
+  if (password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(`AUTH_PASS must be at least ${MIN_PASSWORD_LENGTH} characters`);
   }
   db.prepare('INSERT INTO users (username, password_hash, role) VALUES (?, ?, ?)').run(
     username,
@@ -211,8 +212,8 @@ export function createUser(username: string, password: string, role: UserRoleInp
   if (!normalized || normalized.length < 3) {
     throw new Error('Username must be at least 3 characters');
   }
-  if (!password || password.length < 10) {
-    throw new Error('Password must be at least 10 characters');
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
   }
   if (!['admin', 'editor', 'viewer', 'operator'].includes(role)) {
     throw new Error('Invalid role');
@@ -432,8 +433,8 @@ export function updateUserRole(userId: number, role: UserRoleInput): void {
 }
 
 export function resetUserPassword(userId: number, password: string): void {
-  if (!password || password.length < 10) {
-    throw new Error('Password must be at least 10 characters');
+  if (!password || password.length < MIN_PASSWORD_LENGTH) {
+    throw new Error(`Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
   }
   const db = getDb();
   db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hashPassword(password), userId);
