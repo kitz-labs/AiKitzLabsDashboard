@@ -4,7 +4,7 @@
   "private": false,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "rm -rf .next && next build --webpack",
+    "build": "next build --webpack",
     "start": "next start -p 3000",
     "env:bootstrap": "bash scripts/bootstrap-env.sh",
     "lint": "eslint",
@@ -12,7 +12,9 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test --test-concurrency=1 src/lib/*.test.ts",
     "test:e2e": "pnpm build && playwright test",
-    "build:standalone": "pnpm build"
+    "prepare:standalone": "bash scripts/prepare-standalone.sh",
+    "build:standalone": "pnpm build && pnpm run prepare:standalone",
+    "postbuild": "pnpm run prepare:standalone"
   },
   "dependencies": {
     "better-sqlite3": "^12.6.2",

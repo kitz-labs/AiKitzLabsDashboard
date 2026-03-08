@@ -64,8 +64,6 @@ Initial admin access is seeded from `AUTH_USER` / `AUTH_PASS` on first run when 
 - Docker deploy notes: [`ops/docker/README.md`](./ops/docker/README.md)
 - Auto-deploy via GitHub Actions: [`ops/docker/github-actions-auto-deploy.md`](./ops/docker/github-actions-auto-deploy.md)
 
-The VPS Docker setup uses a simple Next.js production server (`next build` + `next start`) and does not require `standalone` output.
-
 ## Install Commands
 
 ```bash
