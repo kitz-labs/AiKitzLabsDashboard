@@ -53,10 +53,30 @@ interface OpenClawAgent {
 }
 
 interface OpenClawConfig {
+  models?: {
+    providers?: Record<string, {
+      api?: unknown;
+      baseUrl?: unknown;
+      models?: unknown;
+    }>;
+  };
   agents?: {
     defaults?: { model?: unknown; workspace?: unknown };
     list?: OpenClawAgent[];
   };
+}
+
+export interface OpenClawProviderSummary {
+  id: string;
+  api: string | null;
+  baseUrl: string | null;
+  modelCount: number;
+}
+
+export interface OpenClawModelSummary {
+  id: string;
+  provider: string;
+  alias: string;
 }
 
 type AgentStaticMeta = {
@@ -176,6 +196,54 @@ function readOpenClawConfig(openclawConfigPath: string): OpenClawConfig | null {
   } catch {
     return null;
   }
+}
+
+export function getOpenClawModelCatalog(instanceId?: string): {
+  providers: OpenClawProviderSummary[];
+  models: OpenClawModelSummary[];
+} {
+  const instance = getInstance(instanceId);
+  const { openclawConfigPath } = resolveOpenClawPaths(instance);
+  const config = readOpenClawConfig(openclawConfigPath);
+  const providersRaw = config?.models?.providers;
+  if (!providersRaw || typeof providersRaw !== 'object') {
+    return { providers: [], models: [] };
+  }
+
+  const providers: OpenClawProviderSummary[] = [];
+  const models: OpenClawModelSummary[] = [];
+
+  for (const [providerId, providerConfig] of Object.entries(providersRaw)) {
+    const providerModels = isRecord(providerConfig) && Array.isArray(providerConfig.models)
+      ? providerConfig.models
+      : [];
+
+    providers.push({
+      id: providerId,
+      api: isRecord(providerConfig) && typeof providerConfig.api === 'string' ? providerConfig.api : null,
+      baseUrl: isRecord(providerConfig) && typeof providerConfig.baseUrl === 'string' ? providerConfig.baseUrl : null,
+      modelCount: providerModels.length,
+    });
+
+    for (const modelEntry of providerModels) {
+      if (!isRecord(modelEntry)) continue;
+      const modelId = typeof modelEntry.id === 'string' ? modelEntry.id : null;
+      if (!modelId) continue;
+      const alias = typeof modelEntry.name === 'string'
+        ? modelEntry.name
+        : typeof modelEntry.alias === 'string'
+          ? modelEntry.alias
+          : modelId;
+
+      models.push({
+        id: modelId,
+        provider: providerId,
+        alias,
+      });
+    }
+  }
+
+  return { providers, models };
 }
 
 function discoverAgentIdsFromFs(agentsDir: string): string[] {

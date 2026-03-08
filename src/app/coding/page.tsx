@@ -45,6 +45,42 @@ type CodingFileHistory = {
   createdAt: string;
 };
 
+type CodingRuntimeAgent = {
+  id: string;
+  name: string;
+  emoji: string;
+  role: string;
+  model: string;
+  fallbacks: string[];
+  workspace: string;
+  tools: string[];
+};
+
+type CodingRuntimeProvider = {
+  id: string;
+  api: string | null;
+  baseUrl: string | null;
+  modelCount: number;
+};
+
+type CodingRuntimeModel = {
+  id: string;
+  provider: string;
+  alias: string;
+};
+
+type CodingRuntimeSnapshot = {
+  instance: { id: string; label: string };
+  runtime: {
+    connected: boolean;
+    status: 'healthy' | 'degraded' | 'offline';
+    message: string;
+  };
+  agents: CodingRuntimeAgent[];
+  providers: CodingRuntimeProvider[];
+  models: CodingRuntimeModel[];
+};
+
 const DEFAULT_PROVIDER_PROFILES: CodingProviderProfile[] = [
   {
     id: 'openai',
@@ -124,6 +160,8 @@ export default function CodingPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [providerProfiles, setProviderProfiles] = useState<CodingProviderProfile[]>(DEFAULT_PROVIDER_PROFILES);
   const [fileHistory, setFileHistory] = useState<CodingFileHistory[]>([]);
+  const [runtimeSnapshot, setRuntimeSnapshot] = useState<CodingRuntimeSnapshot | null>(null);
+  const [runtimeLoading, setRuntimeLoading] = useState(false);
   const {
     autosaveEnabled,
     autosaveMinutes,
@@ -327,6 +365,39 @@ export default function CodingPage() {
     };
   }, [enabledAgents, updateCoding]);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadRuntimeSnapshot = async () => {
+      if (active) setRuntimeLoading(true);
+      try {
+        const response = await fetch('/api/coding/runtime', { cache: 'no-store' });
+        const data = await response.json();
+        if (!active) return;
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to load OpenClaw runtime');
+        }
+        setRuntimeSnapshot(data as CodingRuntimeSnapshot);
+      } catch {
+        if (active) {
+          setRuntimeSnapshot(null);
+        }
+      } finally {
+        if (active) setRuntimeLoading(false);
+      }
+    };
+
+    void loadRuntimeSnapshot();
+    const timer = window.setInterval(() => {
+      void loadRuntimeSnapshot();
+    }, 20_000);
+
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, []);
+
   const sectionButtons = useMemo(() => ([
     { key: 'agent', label: t(language, 'codingAgent'), icon: Bot },
     { key: 'api', label: t(language, 'codingApi'), icon: KeyRound },
@@ -374,6 +445,14 @@ export default function CodingPage() {
   const selectedFileApprovalPayload = (selectedFileApproval?.payload || null) as CodingFileChangeApprovalPayload | null;
 
   const lastSavedLabel = coding.lastSavedAt ? timeAgo(coding.lastSavedAt) : '—';
+  const runtimeAgents = runtimeSnapshot?.agents ?? [];
+  const runtimeProviders = runtimeSnapshot?.providers ?? [];
+  const runtimeModels = runtimeSnapshot?.models ?? [];
+  const runtimeStatusTone = runtimeSnapshot?.runtime.status === 'healthy'
+    ? 'text-success'
+    : runtimeSnapshot?.runtime.status === 'degraded'
+      ? 'text-warning'
+      : 'text-destructive';
 
   async function createApprovalRequest() {
     if (coding.selectedActionItems.length === 0) return;
@@ -1115,13 +1194,90 @@ export default function CodingPage() {
               })}
             </div>
 
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-              <div className="flex items-start gap-3">
-                <ShieldCheck size={16} className="text-primary mt-0.5" />
-                <div>
-                  <div className="text-sm font-medium">{t(language, 'codingLiveWorkspace')}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{t(language, 'codingApprovalNotice')}</div>
-                  {syncing && <div className="text-[11px] text-primary mt-2">{t(language, 'codingSyncingBackend')}</div>}
+            <div className="grid grid-cols-1 xl:grid-cols-[0.92fr_1.08fr] gap-4">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck size={16} className="text-primary mt-0.5" />
+                  <div>
+                    <div className="text-sm font-medium">{t(language, 'codingLiveWorkspace')}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{t(language, 'codingApprovalNotice')}</div>
+                    {syncing && <div className="text-[11px] text-primary mt-2">{t(language, 'codingSyncingBackend')}</div>}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/40 bg-background/80 p-4 space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium flex items-center gap-2">
+                      <Cpu size={15} className="text-primary" /> OpenClaw Runtime
+                    </div>
+                    <div className="mt-1 text-xs text-muted-foreground">
+                      {runtimeSnapshot?.instance?.label || 'Default'} · live agent + model inventory for the coding workspace
+                    </div>
+                  </div>
+                  {runtimeLoading ? <LoaderCircle size={14} className="animate-spin text-primary" /> : null}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="rounded-xl border border-border/40 p-3 bg-muted/10">
+                    <div className="text-xs text-muted-foreground">Connection</div>
+                    <div className={`mt-1 font-medium ${runtimeStatusTone}`}>
+                      {runtimeSnapshot?.runtime.connected ? 'Connected' : 'Unavailable'}
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-border/40 p-3 bg-muted/10">
+                    <div className="text-xs text-muted-foreground">Inventory</div>
+                    <div className="mt-1 font-medium">{runtimeAgents.length} agents · {runtimeModels.length} models</div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-border/40 p-3 bg-muted/10 text-xs text-muted-foreground">
+                  {runtimeSnapshot?.runtime.message || 'OpenClaw runtime snapshot not loaded yet.'}
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-3">
+                  <div className="rounded-xl border border-border/40 p-3 bg-background/60 space-y-2">
+                    <div className="text-xs font-medium text-foreground flex items-center gap-2">
+                      <Bot size={13} className="text-primary" /> Agents
+                    </div>
+                    <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                      {runtimeAgents.slice(0, 6).map((agent) => (
+                        <div key={agent.id} className="rounded-lg border border-border/30 bg-muted/10 px-3 py-2">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="truncate text-sm font-medium">{agent.emoji} {agent.name}</div>
+                              <div className="text-[11px] text-muted-foreground truncate">{agent.role} · {agent.model}</div>
+                            </div>
+                            <span className="rounded-full border border-border/40 px-2 py-0.5 text-[10px] text-muted-foreground">{agent.tools.length} tools</span>
+                          </div>
+                        </div>
+                      ))}
+                      {runtimeAgents.length === 0 ? <div className="text-[11px] text-muted-foreground">No agents discovered yet.</div> : null}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-border/40 p-3 bg-background/60 space-y-2">
+                    <div className="text-xs font-medium text-foreground flex items-center gap-2">
+                      <Sparkles size={13} className="text-primary" /> Models
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {runtimeProviders.map((provider) => (
+                        <span key={provider.id} className="rounded-full border border-border/40 bg-muted/10 px-2.5 py-1 text-[11px] text-muted-foreground">
+                          {provider.id} · {provider.modelCount}
+                        </span>
+                      ))}
+                    </div>
+                    <div className="space-y-2 max-h-44 overflow-y-auto pr-1">
+                      {runtimeModels.slice(0, 8).map((model) => (
+                        <div key={`${model.provider}:${model.id}`} className="rounded-lg border border-border/30 bg-muted/10 px-3 py-2">
+                          <div className="text-sm font-medium truncate">{model.alias}</div>
+                          <div className="text-[11px] text-muted-foreground truncate">{model.provider} · {model.id}</div>
+                        </div>
+                      ))}
+                      {runtimeModels.length === 0 ? <div className="text-[11px] text-muted-foreground">No configured models found in the current OpenClaw config.</div> : null}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
