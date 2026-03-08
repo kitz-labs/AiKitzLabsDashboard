@@ -1660,10 +1660,10 @@ packages:
     resolution: {integrity: sha512-0hJU9SCPvmMzIBdZFqNPXWa6dqh7WdH0cII9y+CyS8rG3nL48Bclra9HmKhVVUHyPWNH5Y7xDwAB7bfgSjkUMQ==}
     engines: {node: '>= 0.4'}
 
-  kitz-estree@0.25.1:
+  hermes-estree@0.25.1:
     resolution: {integrity: sha512-0wUoCcLp+5Ev5pDW2OriHC2MJCbwLwuRx+gAqMTOkGKJJiBCLjtrvy4PWUGn6MIVefecRpzoOZ/UV6iGdOr+Cw==}
 
-  kitz-parser@0.25.1:
+  hermes-parser@0.25.1:
     resolution: {integrity: sha512-6pEjquH3rqaI6cYAXYPcz9MS4rY6R4ngRgrgfDshRptUZIc3lw0MCIJIGDj9++mfySOuPTHB4nrSW99BCvOPIA==}
 
   https-proxy-agent@7.0.6:
@@ -4029,7 +4029,7 @@ snapshots:
       '@babel/core': 7.29.0
       '@babel/parser': 7.29.0
       eslint: 9.39.2(jiti@2.6.1)
-      kitz-parser: 0.25.1
+      hermes-parser: 0.25.1
       zod: 4.3.6
       zod-validation-error: 4.0.2(zod@4.3.6)
     transitivePeerDependencies:
@@ -4338,11 +4338,11 @@ snapshots:
     dependencies:
       function-bind: 1.1.2
 
-  kitz-estree@0.25.1: {}
+  hermes-estree@0.25.1: {}
 
-  kitz-parser@0.25.1:
+  hermes-parser@0.25.1:
     dependencies:
-      kitz-estree: 0.25.1
+      hermes-estree: 0.25.1
 
   https-proxy-agent@7.0.6:
     dependencies:
