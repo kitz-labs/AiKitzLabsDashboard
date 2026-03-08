@@ -1,4 +1,4 @@
-# Systemd Template Notes
+# Systemd Target Server Notes
 
 Goal: keep `hermes-dashboard` "plug-and-play" across OpenClaw instances by avoiding:
 
@@ -11,18 +11,26 @@ Goal: keep `hermes-dashboard` "plug-and-play" across OpenClaw instances by avoid
 - Runtime data:
   - DB: `/var/lib/hermes-dashboard/hermes.db`
   - State: `/var/lib/hermes-dashboard/state/`
+- Logs: `/var/log/hermes-dashboard/`
 - Env file (secrets + config): `/etc/hermes-dashboard/hermes-dashboard.env`
 
 ## Unit File
 
-Use `ops/systemd/hermes-dashboard.service` as a starting point.
+Use `ops/systemd/hermes-dashboard.service` as the final default for a Linux target server.
 
 Important: update these to match your deployment:
 
 - `WorkingDirectory=...`
 - `EnvironmentFile=...`
-- `ReadWritePaths=...` (must cover your DB and state dirs)
+- `ReadWritePaths=...` (must cover `.next`, DB, state, and logs)
 - `User=` / `Group=`
+
+The service now assumes:
+
+- app checkout at `/opt/hermes-dashboard`
+- runtime user `hermes`
+- standalone build already present in `.next/standalone`
+- runtime writes only under `/opt/hermes-dashboard/.next`, `/var/lib/hermes-dashboard`, and `/var/log/hermes-dashboard`
 
 ## Env File
 
@@ -30,6 +38,8 @@ Minimal required values:
 
 - `AUTH_USER`, `AUTH_PASS`
 - `API_KEY`
+
+Start from `ops/systemd/hermes-dashboard.env.example`.
 
 Template-safe defaults:
 
@@ -53,6 +63,54 @@ move those values into the env file and remove them from the drop-in.
 ## Build Notes
 
 Use `pnpm build:standalone` for deployments that run `.next/standalone/server.js`, so `/_next/static/*` assets are copied into the standalone bundle.
+
+## Exact Target Server Setup
+
+Create the service user and directories:
+
+```bash
+sudo useradd --system --create-home --home-dir /home/hermes --shell /usr/sbin/nologin hermes
+sudo mkdir -p /opt/hermes-dashboard /etc/hermes-dashboard /var/lib/hermes-dashboard/state /var/log/hermes-dashboard
+sudo chown -R hermes:hermes /opt/hermes-dashboard /var/lib/hermes-dashboard /var/log/hermes-dashboard
+```
+
+Clone and build the app:
+
+```bash
+sudo -u hermes git clone https://github.com/kitz-labs/AiKitzLabsDashboard.git /opt/hermes-dashboard
+cd /opt/hermes-dashboard
+corepack enable
+pnpm install --frozen-lockfile
+pnpm build:standalone
+```
+
+Install env and service files:
+
+```bash
+sudo cp /opt/hermes-dashboard/ops/systemd/hermes-dashboard.env.example /etc/hermes-dashboard/hermes-dashboard.env
+sudo cp /opt/hermes-dashboard/ops/systemd/hermes-dashboard.service /etc/systemd/system/hermes-dashboard.service
+sudo chmod 640 /etc/hermes-dashboard/hermes-dashboard.env
+sudo systemctl daemon-reload
+sudo systemctl enable --now hermes-dashboard
+```
+
+Verify and inspect logs:
+
+```bash
+sudo systemctl status hermes-dashboard --no-pager
+sudo journalctl -u hermes-dashboard -n 200 --no-pager
+sudo journalctl -u hermes-dashboard -f
+```
+
+Deploy a new version later:
+
+```bash
+cd /opt/hermes-dashboard
+sudo -u hermes git pull --ff-only
+pnpm install --frozen-lockfile
+pnpm build:standalone
+sudo systemctl restart hermes-dashboard
+```
 
 ## 1Password (Recommended)
 
