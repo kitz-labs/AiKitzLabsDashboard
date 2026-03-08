@@ -77,6 +77,20 @@ pnpm dev
 - `Files`: Upload and index knowledge files for long-term app memory
 - `Sessions`: Restore, archive, and autosave development context every 30 minutes
 
+## Coding Backend Engine
+
+- `GET /api/coding/bootstrap`: Loads Coding files, sessions, and approval queue
+- `POST /api/coding/files`: Uploads a knowledge file and stores metadata in SQLite
+- `GET /api/coding/sessions`: Reads persisted Coding sessions
+- `POST /api/coding/snapshots`: Saves a Coding snapshot to the backend
+- `GET|POST|PATCH /api/coding/approvals`: Manages approval-first change requests
+
+Optional backend storage directory:
+
+```bash
+HERMES_CODING_STORAGE_DIR=./state/coding
+```
+
 ## Project Status
 
 ### What Works

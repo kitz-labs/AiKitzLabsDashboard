@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, type ChangeEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import {
   AlertTriangle,
   Bot,
@@ -25,9 +25,10 @@ import {
   Trash2,
   Upload,
   WandSparkles,
+  LoaderCircle,
 } from 'lucide-react';
 import { useDashboard } from '@/store';
-import { t } from '@/lib/i18n';
+import { t, type TextKey } from '@/lib/i18n';
 import { timeAgo } from '@/lib/utils';
 
 const PROVIDER_STATS = {
@@ -100,19 +101,130 @@ export default function CodingPage() {
     toggleCodingAgent,
     addCodingKnowledgeFiles,
     removeCodingKnowledgeFile,
-    saveCodingSnapshot,
     archiveCodingSession,
   } = useDashboard();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const providerStats = PROVIDER_STATS[coding.provider];
+  const [syncing, setSyncing] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const {
+    autosaveEnabled,
+    autosaveMinutes,
+    enabledAgents,
+    enabledProviders,
+    mode,
+    promptDraft,
+    selectedActionItems,
+    sessions,
+    knowledgeFiles,
+    approvals,
+  } = coding;
+
+  const persistSnapshot = useCallback(async (summary?: string) => {
+    if (!promptDraft.trim()) {
+      updateCoding({ lastSavedAt: new Date().toISOString() });
+      return;
+    }
+
+    setBusy('snapshot');
+    try {
+      const response = await fetch('/api/coding/snapshots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: summary,
+          summary: summary || t(language, 'codingAutosaveSummary'),
+          promptDraft,
+          output: `Mode: ${mode} · Providers: ${enabledProviders.join(', ')}`,
+          agents: enabledAgents,
+          selectedActions: selectedActionItems,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to save snapshot');
+
+      const session = data.session;
+      updateCoding({
+        lastSavedAt: new Date().toISOString(),
+        sessions: [
+          {
+            id: session.id,
+            title: session.title,
+            summary: session.summary || '',
+            input: session.input || '',
+            output: session.output || '',
+            status: session.status,
+            agents: (session.agents || []) as typeof enabledAgents,
+            updatedAt: session.updatedAt || new Date().toISOString(),
+          },
+          ...sessions.filter((item) => item.id !== session.id),
+        ].slice(0, 24),
+      });
+    } catch {
+      updateCoding({ lastSavedAt: new Date().toISOString() });
+    } finally {
+      setBusy(null);
+    }
+  }, [enabledAgents, enabledProviders, language, mode, promptDraft, selectedActionItems, sessions, updateCoding]);
 
   useEffect(() => {
-    if (!coding.autosaveEnabled) return;
+    if (!autosaveEnabled) return;
     const timer = window.setInterval(() => {
-      saveCodingSnapshot(t(language, 'codingAutosaveSummary'));
-    }, coding.autosaveMinutes * 60_000);
+      void persistSnapshot(t(language, 'codingAutosaveSummary'));
+    }, autosaveMinutes * 60_000);
     return () => window.clearInterval(timer);
-  }, [coding.autosaveEnabled, coding.autosaveMinutes, language, saveCodingSnapshot]);
+  }, [autosaveEnabled, autosaveMinutes, language, persistSnapshot]);
+
+  useEffect(() => {
+    let active = true;
+    const hydrate = async () => {
+      setSyncing(true);
+      try {
+        const response = await fetch('/api/coding/bootstrap', { cache: 'no-store' });
+        const data = await response.json();
+        if (!active) return;
+        updateCoding({
+          knowledgeFiles: Array.isArray(data.files) ? data.files.map((file: { contentPreview?: string; storagePath?: string; createdBy?: string; updatedAt?: string; createdAt?: string; type?: string; category: string; id: string; name: string; size: number }) => ({
+            id: file.id,
+            name: file.name,
+            type: file.type || 'application/octet-stream',
+            size: file.size,
+            category: file.category as 'docs' | 'flows' | 'core' | 'memory' | 'uploads',
+            contentPreview: file.contentPreview || '',
+            addedAt: file.createdAt || file.updatedAt || new Date().toISOString(),
+          })) : knowledgeFiles,
+          sessions: Array.isArray(data.sessions) ? data.sessions.map((session: { id: string; title: string; summary?: string; input?: string; output?: string; status: 'active' | 'saved' | 'archived'; agents?: string[]; updatedAt?: string; createdAt?: string }) => ({
+            id: session.id,
+            title: session.title,
+            summary: session.summary || '',
+            input: session.input || '',
+            output: session.output || '',
+            status: session.status,
+            agents: (session.agents || []) as typeof enabledAgents,
+            updatedAt: session.updatedAt || session.createdAt || new Date().toISOString(),
+          })) : sessions,
+          approvals: Array.isArray(data.approvals) ? data.approvals.map((approval: { id: string; title: string; summary?: string; status: 'pending' | 'approved' | 'rejected'; createdAt?: string; updatedAt?: string }) => ({
+            id: approval.id,
+            title: approval.title,
+            summary: approval.summary || '',
+            status: approval.status,
+            createdAt: approval.createdAt || approval.updatedAt || new Date().toISOString(),
+            updatedAt: approval.updatedAt || approval.createdAt || new Date().toISOString(),
+          })) : approvals,
+        });
+      } catch {
+        // noop
+      } finally {
+        if (active) setSyncing(false);
+      }
+    };
+
+    void hydrate();
+
+    return () => {
+      active = false;
+    };
+  }, [approvals, enabledAgents, knowledgeFiles, sessions, updateCoding]);
 
   const sectionButtons = useMemo(() => ([
     { key: 'agent', label: t(language, 'codingAgent'), icon: Bot },
@@ -151,29 +263,87 @@ export default function CodingPage() {
 
   const lastSavedLabel = coding.lastSavedAt ? timeAgo(coding.lastSavedAt) : '—';
 
+  async function createApprovalRequest() {
+    if (coding.selectedActionItems.length === 0) return;
+    setBusy('approval');
+    try {
+      const selectedLabels = coding.selectedActionItems.map((key) => t(language, key as TextKey));
+      const response = await fetch('/api/coding/approvals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: selectedLabels[0],
+          summary: selectedLabels.join(' · '),
+          payload: {
+            promptDraft: coding.promptDraft,
+            selectedActions: coding.selectedActionItems,
+            agents: coding.enabledAgents,
+            providers: coding.enabledProviders,
+          },
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to create approval');
+      updateCoding({
+        approvals: [
+          {
+            id: data.approval.id,
+            title: data.approval.title,
+            summary: data.approval.summary || '',
+            status: data.approval.status,
+            createdAt: data.approval.createdAt || new Date().toISOString(),
+            updatedAt: data.approval.updatedAt || new Date().toISOString(),
+          },
+          ...coding.approvals.filter((item) => item.id !== data.approval.id),
+        ],
+      });
+    } catch {
+      // noop for now
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files || []);
     if (files.length === 0) return;
-
-    const preparedFiles = await Promise.all(
-      files.map(async (file) => {
-        const textLike = /^(text|application\/(json|javascript))/.test(file.type)
-          || /\.(md|txt|json|csv|ts|tsx|js|jsx|yml|yaml)$/i.test(file.name);
-        const content = textLike ? await file.text() : '';
-        return {
-          id: `${file.name}-${file.lastModified}`,
-          name: file.name,
-          type: file.type || 'application/octet-stream',
-          size: file.size,
-          category: categorizeFile(file.name),
-          contentPreview: content.slice(0, 700),
-          addedAt: new Date().toISOString(),
-        };
-      }),
-    );
-
-    addCodingKnowledgeFiles(preparedFiles);
+    setBusy('upload');
+    const uploadedRecords: typeof coding.knowledgeFiles = [];
+    try {
+      for (const file of files) {
+        const form = new FormData();
+        form.append('file', file);
+        const response = await fetch('/api/coding/files', {
+          method: 'POST',
+          body: form,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Upload failed');
+        uploadedRecords.push({
+          id: data.file.id,
+          name: data.file.name,
+          type: data.file.type || file.type || 'application/octet-stream',
+          size: data.file.size,
+          category: (data.file.category || categorizeFile(file.name)) as 'docs' | 'flows' | 'core' | 'memory' | 'uploads',
+          contentPreview: data.file.contentPreview || '',
+          addedAt: data.file.createdAt || data.file.updatedAt || new Date().toISOString(),
+        });
+      }
+      addCodingKnowledgeFiles(uploadedRecords);
+    } finally {
+      setBusy(null);
+    }
     event.target.value = '';
+  }
+
+  async function handleDeleteFile(id: string) {
+    setBusy(`delete-file-${id}`);
+    try {
+      await fetch(`/api/coding/files?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      removeCodingKnowledgeFile(id);
+    } finally {
+      setBusy(null);
+    }
   }
 
   function toggleSuggestion(key: string) {
@@ -444,7 +614,7 @@ export default function CodingPage() {
                       <div className="mt-2 text-xs text-muted-foreground line-clamp-3">{file.contentPreview}</div>
                     ) : null}
                   </div>
-                  <button className="btn btn-ghost btn-xs" onClick={() => removeCodingKnowledgeFile(file.id)}>
+                  <button className="btn btn-ghost btn-xs" onClick={() => handleDeleteFile(file.id)}>
                     <Trash2 size={12} /> {t(language, 'codingRemove')}
                   </button>
                 </div>
@@ -498,9 +668,35 @@ export default function CodingPage() {
                   >
                     <RefreshCw size={12} /> {t(language, 'codingRestoreSession')}
                   </button>
-                  <button className="btn btn-ghost btn-xs" onClick={() => archiveCodingSession(session.id)}>
+                  <button className="btn btn-ghost btn-xs" onClick={async () => {
+                    await fetch('/api/coding/sessions', {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ id: session.id, action: 'archive' }),
+                    });
+                    archiveCodingSession(session.id);
+                  }}>
                     <Trash2 size={12} /> {t(language, 'codingArchiveSession')}
                   </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {coding.approvals.length > 0 && (
+          <div className="space-y-2 border-t border-border/40 pt-3">
+            <div className="text-xs text-muted-foreground">{t(language, 'codingApprovalQueue')}</div>
+            {coding.approvals.slice(0, 3).map((approval) => (
+              <div key={approval.id} className="rounded-xl border border-border/40 p-3 bg-muted/10">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium">{approval.title}</div>
+                    <div className="text-[11px] text-muted-foreground mt-1">{approval.summary}</div>
+                  </div>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${approval.status === 'approved' ? 'bg-success/10 text-success' : approval.status === 'rejected' ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'}`}>
+                    {approval.status}
+                  </span>
                 </div>
               </div>
             ))}
@@ -582,11 +778,14 @@ export default function CodingPage() {
               <button className="btn btn-ghost btn-sm" onClick={() => fileInputRef.current?.click()}>
                 <Upload size={14} /> {t(language, 'codingUploadContext')}
               </button>
-              <button className="btn btn-ghost btn-sm" onClick={() => saveCodingSnapshot()}>
+              <button className="btn btn-ghost btn-sm" onClick={() => void persistSnapshot()}>
                 <Save size={14} /> {t(language, 'codingSaveSnapshot')}
               </button>
-              <button className="btn btn-primary btn-sm" onClick={() => saveCodingSnapshot(t(language, 'codingPreparePlan'))}>
+              <button className="btn btn-primary btn-sm" onClick={() => void persistSnapshot(t(language, 'codingPreparePlan'))}>
                 <GitBranch size={14} /> {t(language, 'codingPreparePlan')}
+              </button>
+              <button className="btn btn-ghost btn-sm" onClick={() => void createApprovalRequest()} disabled={coding.selectedActionItems.length === 0 || busy === 'approval'}>
+                {busy === 'approval' ? <LoaderCircle size={14} className="animate-spin" /> : <ShieldCheck size={14} />} {t(language, 'codingRequestApproval')}
               </button>
               <button className="btn btn-ghost btn-sm" onClick={loadNewSuggestions}>
                 <RefreshCw size={14} /> {t(language, 'codingNewSuggestions')}
@@ -613,6 +812,7 @@ export default function CodingPage() {
                 <div>
                   <div className="text-sm font-medium">{t(language, 'codingLiveWorkspace')}</div>
                   <div className="text-xs text-muted-foreground mt-1">{t(language, 'codingApprovalNotice')}</div>
+                  {syncing && <div className="text-[11px] text-primary mt-2">{t(language, 'codingSyncingBackend')}</div>}
                 </div>
               </div>
             </div>

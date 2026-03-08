@@ -43,6 +43,15 @@ interface CodingSession {
   agents: CodingAgentId[];
 }
 
+interface CodingApproval {
+  id: string;
+  title: string;
+  summary: string;
+  status: 'pending' | 'approved' | 'rejected';
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface CodingState {
   activeSection: CodingSection;
   enabledAgents: CodingAgentId[];
@@ -60,6 +69,7 @@ interface CodingState {
   promptDraft: string;
   knowledgeFiles: CodingKnowledgeFile[];
   sessions: CodingSession[];
+  approvals: CodingApproval[];
   browserEnabled: boolean;
   canEditApp: boolean;
   approvalRequired: boolean;
@@ -195,6 +205,7 @@ export const useDashboard = create<DashboardState>()(persist((set, get) => ({
         agents: ['github-copilot', 'app-architect'],
       },
     ],
+    approvals: [],
     browserEnabled: true,
     canEditApp: true,
     approvalRequired: true,

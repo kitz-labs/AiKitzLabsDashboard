@@ -228,6 +228,52 @@ function migrate(db: Database.Database) {
       last_synced_at INTEGER
     );
 
+    CREATE TABLE IF NOT EXISTS coding_sessions (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      summary TEXT,
+      input TEXT,
+      output TEXT,
+      status TEXT NOT NULL DEFAULT 'saved',
+      agents_json TEXT NOT NULL DEFAULT '[]',
+      selected_actions_json TEXT NOT NULL DEFAULT '[]',
+      created_by TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_coding_sessions_status ON coding_sessions(status);
+    CREATE INDEX IF NOT EXISTS idx_coding_sessions_updated ON coding_sessions(updated_at DESC);
+
+    CREATE TABLE IF NOT EXISTS coding_knowledge_files (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT,
+      size INTEGER NOT NULL DEFAULT 0,
+      category TEXT NOT NULL DEFAULT 'uploads',
+      content_preview TEXT,
+      storage_path TEXT,
+      created_by TEXT,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_coding_knowledge_category ON coding_knowledge_files(category);
+    CREATE INDEX IF NOT EXISTS idx_coding_knowledge_updated ON coding_knowledge_files(updated_at DESC);
+
+    CREATE TABLE IF NOT EXISTS coding_approvals (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      summary TEXT,
+      payload_json TEXT,
+      status TEXT NOT NULL DEFAULT 'pending',
+      requested_by TEXT,
+      reviewed_by TEXT,
+      reviewed_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_coding_approvals_status ON coding_approvals(status);
+    CREATE INDEX IF NOT EXISTS idx_coding_approvals_updated ON coding_approvals(updated_at DESC);
+
   `);
 
   // Column migrations (safe to re-run)
