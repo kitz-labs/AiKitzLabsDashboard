@@ -2,6 +2,7 @@
 
 import { BarChart3, Calendar } from 'lucide-react';
 import Image from 'next/image';
+import { InstagramIcon } from '@/components/ui/platform-icons';
 import { useDashboard } from '@/store';
 import { t } from '@/lib/i18n';
 
@@ -20,7 +21,7 @@ export default function InstagramPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header">
-          <h1 className="text-xl font-semibold">{t(language, 'titleInstagram')}</h1>
+          <h1 className="text-xl font-semibold flex items-center gap-2"><InstagramIcon size={18} className="text-pink-500" /> {t(language, 'titleInstagram')}</h1>
           <p className="text-sm text-muted-foreground">{t(language, 'websiteSubtitle')}</p>
         </div>
       </div>

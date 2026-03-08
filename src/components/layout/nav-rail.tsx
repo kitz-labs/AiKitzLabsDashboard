@@ -3,10 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
   Gauge, Bot, PenLine, MessageCircle, Mail, Contact, Zap,
   Search, BarChart3, LineChart, BrainCircuit, Rocket, Clock, List, Settings,
-  FolderOpen, Box, Wallet, Code2,
+  FolderOpen, Box, Wallet, Code2, Github,
 } from 'lucide-react';
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
@@ -106,6 +107,7 @@ export function NavRail() {
   const realOnly = useDashboard(s => s.realOnly);
   const language = useDashboard(s => s.language);
   const toggleLanguage = useDashboard(s => s.toggleLanguage);
+  const [username, setUsername] = useState<string | null>(null);
   const navGroups = getNavGroups(language);
 
   const { data: counts } = useSmartPoll<NavCounts>(
@@ -113,15 +115,22 @@ export function NavRail() {
     { interval: 30_000, key: realOnly },
   );
 
+  useEffect(() => {
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => setUsername(data?.user?.username || null))
+      .catch(() => setUsername(null));
+  }, []);
+
   return (
     <nav className="nav-rail fixed left-0 top-[var(--header-height)] bottom-0 w-[var(--nav-width)] bg-card/92 backdrop-blur-lg border-r border-border/70 z-40 hidden md:flex flex-col">
       <div className="px-3 py-3 border-b border-border/60 flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-lg bg-card border border-border/60 flex items-center justify-center overflow-hidden">
-          <Image src="/logo.png" alt="AI Kitz Labs" width={32} height={32} />
+          <Image src="/ai-kitz-labs-logo.svg" alt="AI Kitz Labs" width={32} height={32} />
         </div>
         <div className="min-w-0">
           <div className="text-sm font-semibold leading-none">{t(language, 'brandName')}</div>
-          <div className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">{t(language, 'missionView')}</div>
+          <div className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wide">{username || t(language, 'missionView')}</div>
         </div>
       </div>
 
@@ -176,6 +185,18 @@ export function NavRail() {
 
       <div className="px-2 py-2 border-t border-border/60 flex items-center gap-2">
         <div className="flex-1 space-y-1">
+          <Link
+            href="/github"
+            className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${
+              pathname.startsWith('/github')
+                ? 'bg-primary/14 text-primary'
+                : 'text-muted-foreground hover:text-foreground hover:bg-surface-2/80'
+            }`}
+          >
+            {pathname.startsWith('/github') && <span className="absolute left-0 w-0.5 h-5 bg-primary rounded-r" />}
+            <Github size={16} />
+            <span>{t(language, 'navGithub')}</span>
+          </Link>
           <Link
             href="/coding"
             className={`relative flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm transition-smooth ${

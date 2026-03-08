@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buildContentPreview, createUnifiedDiff, inferCodingCategory } from './coding';
+import { buildContentPreview, createUnifiedDiff, getCodingProviderProfiles, inferCodingCategory, isCodingFileChangePayload } from './coding';
 
 test('inferCodingCategory detects markdown docs', () => {
   assert.equal(inferCodingCategory('architecture-notes.md'), 'docs');
@@ -24,4 +24,25 @@ test('createUnifiedDiff marks removed and added lines', () => {
   assert.equal(diff.includes('-const b = 2;'), true);
   assert.equal(diff.includes('+const b = 3;'), true);
   assert.equal(diff.includes('+const c = 4;'), true);
+});
+
+test('getCodingProviderProfiles marks enabled providers', () => {
+  const profiles = getCodingProviderProfiles(['openai', 'google']);
+  assert.equal(profiles.find((item) => item.id === 'openai')?.enabled, true);
+  assert.equal(profiles.find((item) => item.id === 'google')?.enabled, true);
+  assert.equal(profiles.find((item) => item.id === 'anthropic')?.enabled, false);
+});
+
+test('isCodingFileChangePayload validates executable file approvals', () => {
+  assert.equal(isCodingFileChangePayload({
+    type: 'file-change',
+    filePath: 'src/app/coding/page.tsx',
+    diffPreview: '@@',
+    proposedContent: 'hello',
+    currentContent: 'world',
+    currentContentPreview: 'world',
+    proposedContentPreview: 'hello',
+    exists: true,
+  }), true);
+  assert.equal(isCodingFileChangePayload({ type: 'workspace-plan' }), false);
 });

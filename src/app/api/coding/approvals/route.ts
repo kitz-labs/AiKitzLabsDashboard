@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { requireApiEditor, requireApiUser } from '@/lib/api-auth';
+import { requireApiCapability, requireApiEditor, requireApiUser } from '@/lib/api-auth';
 import { requireUser } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
-import { createCodingApproval, listCodingApprovals, updateCodingApprovalStatus } from '@/lib/coding';
+import { createCodingApproval, getCodingApprovalById, listCodingApprovals, updateCodingApprovalStatus } from '@/lib/coding';
 
 export const dynamic = 'force-dynamic';
 
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const auth = requireApiEditor(request as Request);
+  const auth = requireApiCapability(request as Request, 'review_coding_changes');
   if (auth) return auth;
   const actor = requireUser(request as Request);
   const body = await request.json();
@@ -50,6 +50,14 @@ export async function PATCH(request: NextRequest) {
   }
   if (body.status !== 'approved' && body.status !== 'rejected') {
     return NextResponse.json({ error: 'status must be approved or rejected' }, { status: 400 });
+  }
+
+  const approval = getCodingApprovalById(body.id);
+  if (!approval) {
+    return NextResponse.json({ error: 'Approval not found' }, { status: 404 });
+  }
+  if (approval.requestedBy && approval.requestedBy === actor.username) {
+    return NextResponse.json({ error: 'Requester cannot review the same coding approval' }, { status: 403 });
   }
 
   const updated = updateCodingApprovalStatus(body.id, body.status, actor.username);

@@ -22,6 +22,7 @@ interface HeaderStats {
 
 export function HeaderBar() {
   const { feedOpen, toggleFeed, realOnly, toggleRealOnly, language } = useDashboard();
+  const [username, setUsername] = useState<string | null>(null);
 
   // Lightweight poll for header stats
   const { data: stats } = useSmartPoll<HeaderStats>(
@@ -29,13 +30,27 @@ export function HeaderBar() {
     { interval: 60_000, key: realOnly },
   );
 
+  useEffect(() => {
+    fetch('/api/auth/me', { cache: 'no-store' })
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => setUsername(data?.user?.username || null))
+      .catch(() => setUsername(null));
+  }, []);
+
   return (
     <header className="fixed top-0 left-0 right-0 h-[var(--header-height)] bg-card/90 backdrop-blur-sm border-b border-border/70 flex items-center justify-between px-3 sm:px-4 z-50">
       <div className="flex items-center gap-2.5">
         <div className="w-7 h-7 rounded-md bg-card border border-border/60 flex items-center justify-center overflow-hidden">
-          <Image src="/logo.png" alt="AI Kitz Labs" width={28} height={28} />
+          <Image src="/ai-kitz-labs-logo.svg" alt="AI Kitz Labs" width={28} height={28} />
         </div>
-        <span className="font-semibold text-sm tracking-tight">{t(language, 'brandName')}</span>
+        <div className="flex items-center gap-2">
+          <span className="font-semibold text-sm tracking-tight">{t(language, 'brandName')}</span>
+          {username && (
+            <span className="hidden sm:inline-flex rounded-full border border-border/60 bg-muted/40 px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+              @{username}
+            </span>
+          )}
+        </div>
 
         {/* Quick stats — hidden on small screens */}
         {stats && (

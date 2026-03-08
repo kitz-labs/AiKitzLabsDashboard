@@ -30,47 +30,62 @@ import {
 import { useDashboard } from '@/store';
 import { t, type TextKey } from '@/lib/i18n';
 import { timeAgo } from '@/lib/utils';
+import type { CodingApprovalPayload, CodingFileChangeApprovalPayload, CodingProvider, CodingProviderProfile, CodingWorkspaceState } from '@/types';
 
-const PROVIDER_STATS = {
-  openai: {
+type CodingFileHistory = {
+  id: string;
+  approvalId: string;
+  filePath: string;
+  action: 'applied' | 'rolled_back';
+  beforeContent: string;
+  afterContent: string;
+  diffPreview: string;
+  actor: string | null;
+  createdAt: string;
+};
+
+const DEFAULT_PROVIDER_PROFILES: CodingProviderProfile[] = [
+  {
+    id: 'openai',
+    label: 'OpenAI',
     endpoint: 'https://api.openai.com/v1',
     usage: '1.2M / 5M',
     credits: '$182.40',
-    health: 'healthy' as const,
+    health: 'healthy',
+    models: ['gpt-5.4', 'gpt-4.1', 'gpt-4.1-mini'],
+    enabled: true,
   },
-  anthropic: {
+  {
+    id: 'anthropic',
+    label: 'Anthropic',
     endpoint: 'https://api.anthropic.com',
     usage: '840k / 3M',
     credits: '$96.00',
-    health: 'healthy' as const,
+    health: 'healthy',
+    models: ['claude-3-7-sonnet', 'claude-3-5-sonnet'],
+    enabled: true,
   },
-  google: {
+  {
+    id: 'google',
+    label: 'Google AI',
     endpoint: 'https://generativelanguage.googleapis.com',
     usage: '620k / 2M',
     credits: '$74.10',
-    health: 'warning' as const,
+    health: 'warning',
+    models: ['gemini-2.0-flash', 'gemini-1.5-pro'],
+    enabled: false,
   },
-  openrouter: {
+  {
+    id: 'openrouter',
+    label: 'OpenRouter',
     endpoint: 'https://openrouter.ai/api/v1',
     usage: '2.4M / 8M',
     credits: '$58.20',
-    health: 'healthy' as const,
+    health: 'healthy',
+    models: ['openai/gpt-4.1-mini', 'anthropic/claude-3.5-sonnet', 'google/gemini-2.0-flash'],
+    enabled: false,
   },
-};
-
-const PROVIDER_MODELS = {
-  openai: ['gpt-5.4', 'gpt-4.1', 'gpt-4.1-mini'],
-  anthropic: ['claude-3-7-sonnet', 'claude-3-5-sonnet'],
-  google: ['gemini-2.0-flash', 'gemini-1.5-pro'],
-  openrouter: ['openai/gpt-4.1-mini', 'anthropic/claude-3.5-sonnet', 'google/gemini-2.0-flash'],
-} as const;
-
-const PROVIDER_LABELS = {
-  openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  google: 'Google AI',
-  openrouter: 'OpenRouter',
-} as const;
+];
 
 const ACTION_SUGGESTION_SETS = [
   ['codingActionRefactor', 'codingActionPolishMobile', 'codingActionAuditApi', 'codingActionNormalizeI18n'],
@@ -104,9 +119,10 @@ export default function CodingPage() {
     archiveCodingSession,
   } = useDashboard();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const providerStats = PROVIDER_STATS[coding.provider];
   const [syncing, setSyncing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
+  const [providerProfiles, setProviderProfiles] = useState<CodingProviderProfile[]>(DEFAULT_PROVIDER_PROFILES);
+  const [fileHistory, setFileHistory] = useState<CodingFileHistory[]>([]);
   const {
     autosaveEnabled,
     autosaveMinutes,
@@ -119,6 +135,66 @@ export default function CodingPage() {
     approvals,
     fileChangeDraft,
   } = coding;
+  const safeSuggestionsVersion = typeof coding.suggestionsVersion === 'number' ? coding.suggestionsVersion : 0;
+  const safeSuggestionSet = ACTION_SUGGESTION_SETS[safeSuggestionsVersion % ACTION_SUGGESTION_SETS.length] ?? ACTION_SUGGESTION_SETS[0];
+  const safeFileChangeDraft = {
+    filePath: fileChangeDraft?.filePath ?? 'src/app/coding/page.tsx',
+    title: fileChangeDraft?.title ?? 'Improve Coding workspace UX',
+    summary: fileChangeDraft?.summary ?? 'Prepare a reviewed file change before applying app modifications.',
+    proposedContent: fileChangeDraft?.proposedContent ?? '',
+    diffPreview: fileChangeDraft?.diffPreview ?? '',
+    currentContent: fileChangeDraft?.currentContent ?? '',
+    selectedApprovalId: fileChangeDraft?.selectedApprovalId ?? null,
+  };
+  const providerCatalog = useMemo(() => {
+    const merged = providerProfiles.length > 0 ? providerProfiles : DEFAULT_PROVIDER_PROFILES;
+    return merged.map((profile) => ({
+      ...profile,
+      enabled: coding.enabledProviders.includes(profile.id),
+    }));
+  }, [coding.enabledProviders, providerProfiles]);
+  const providerMap = useMemo(
+    () => new Map(providerCatalog.map((profile) => [profile.id, profile] as const)),
+    [providerCatalog],
+  );
+  const providerStats = providerMap.get(coding.provider) || providerCatalog[0] || DEFAULT_PROVIDER_PROFILES[0];
+  const currentProviderModels = providerStats?.models?.length ? providerStats.models : [coding.model];
+
+  const workspaceStatePatch = useMemo<CodingWorkspaceState>(() => ({
+    activeSection: coding.activeSection,
+    enabledAgents: coding.enabledAgents,
+    enabledProviders: coding.enabledProviders,
+    mode: coding.mode,
+    reasoningMode: coding.reasoningMode,
+    approvalMode: coding.approvalMode,
+    mobileView: coding.mobileView,
+    provider: coding.provider,
+    model: coding.model,
+    promptDraft: coding.promptDraft,
+    selectedActionItems: coding.selectedActionItems,
+    approvalRequired: coding.approvalRequired,
+    browserEnabled: coding.browserEnabled,
+    canEditApp: coding.canEditApp,
+    learningEnabled: coding.learningEnabled,
+    dailyLearning: coding.dailyLearning,
+  }), [
+    coding.activeSection,
+    coding.approvalMode,
+    coding.approvalRequired,
+    coding.browserEnabled,
+    coding.canEditApp,
+    coding.dailyLearning,
+    coding.enabledAgents,
+    coding.enabledProviders,
+    coding.learningEnabled,
+    coding.mobileView,
+    coding.mode,
+    coding.model,
+    coding.promptDraft,
+    coding.provider,
+    coding.reasoningMode,
+    coding.selectedActionItems,
+  ]);
 
   const persistSnapshot = useCallback(async (summary?: string) => {
     if (!promptDraft.trim()) {
@@ -138,6 +214,7 @@ export default function CodingPage() {
           output: `Mode: ${mode} · Providers: ${enabledProviders.join(', ')}`,
           agents: enabledAgents,
           selectedActions: selectedActionItems,
+          workspaceState: workspaceStatePatch,
         }),
       });
       const data = await response.json();
@@ -155,6 +232,8 @@ export default function CodingPage() {
             output: session.output || '',
             status: session.status,
             agents: (session.agents || []) as typeof enabledAgents,
+            selectedActions: Array.isArray(session.selectedActions) ? session.selectedActions : [],
+            workspaceState: session.workspaceState && typeof session.workspaceState === 'object' ? session.workspaceState as CodingWorkspaceState : null,
             updatedAt: session.updatedAt || new Date().toISOString(),
           },
           ...sessions.filter((item) => item.id !== session.id),
@@ -165,7 +244,7 @@ export default function CodingPage() {
     } finally {
       setBusy(null);
     }
-  }, [enabledAgents, enabledProviders, language, mode, promptDraft, selectedActionItems, sessions, updateCoding]);
+  }, [enabledAgents, enabledProviders, language, mode, promptDraft, selectedActionItems, sessions, updateCoding, workspaceStatePatch]);
 
   useEffect(() => {
     if (!autosaveEnabled) return;
@@ -196,7 +275,7 @@ export default function CodingPage() {
           }));
         }
         if (Array.isArray(data.sessions)) {
-          patch.sessions = data.sessions.map((session: { id: string; title: string; summary?: string; input?: string; output?: string; status: 'active' | 'saved' | 'archived'; agents?: string[]; updatedAt?: string; createdAt?: string }) => ({
+          patch.sessions = data.sessions.map((session: { id: string; title: string; summary?: string; input?: string; output?: string; status: 'active' | 'saved' | 'archived'; agents?: string[]; selectedActions?: string[]; workspaceState?: CodingWorkspaceState | null; updatedAt?: string; createdAt?: string }) => ({
             id: session.id,
             title: session.title,
             summary: session.summary || '',
@@ -204,11 +283,13 @@ export default function CodingPage() {
             output: session.output || '',
             status: session.status,
             agents: (session.agents || []) as typeof enabledAgents,
+            selectedActions: Array.isArray(session.selectedActions) ? session.selectedActions : [],
+            workspaceState: session.workspaceState && typeof session.workspaceState === 'object' ? session.workspaceState : null,
             updatedAt: session.updatedAt || session.createdAt || new Date().toISOString(),
           }));
         }
         if (Array.isArray(data.approvals)) {
-          patch.approvals = data.approvals.map((approval: { id: string; title: string; summary?: string; status: 'pending' | 'approved' | 'rejected'; createdAt?: string; updatedAt?: string; payload?: Record<string, unknown> | null }) => ({
+          patch.approvals = data.approvals.map((approval: { id: string; title: string; summary?: string; status: 'pending' | 'approved' | 'rejected'; createdAt?: string; updatedAt?: string; payload?: CodingApprovalPayload | null }) => ({
             id: approval.id,
             title: approval.title,
             summary: approval.summary || '',
@@ -217,6 +298,18 @@ export default function CodingPage() {
             updatedAt: approval.updatedAt || approval.createdAt || new Date().toISOString(),
             payload: approval.payload || null,
           }));
+        }
+        if (Array.isArray(data.providers)) {
+          setProviderProfiles(data.providers as CodingProviderProfile[]);
+        }
+        try {
+          const historyResponse = await fetch('/api/coding/file-changes/history', { cache: 'no-store' });
+          const historyData = await historyResponse.json();
+          if (historyResponse.ok && Array.isArray(historyData.history) && active) {
+            setFileHistory(historyData.history as CodingFileHistory[]);
+          }
+        } catch {
+          // noop
         }
         updateCoding(patch);
       } catch {
@@ -264,9 +357,9 @@ export default function CodingPage() {
   ]), [language]);
 
   const actionItems = useMemo(() => (
-    ACTION_SUGGESTION_SETS[coding.suggestionsVersion % ACTION_SUGGESTION_SETS.length]
+    safeSuggestionSet
       .map((key) => ({ key, label: t(language, key) }))
-  ), [coding.suggestionsVersion, language]);
+  ), [language, safeSuggestionSet]);
 
   const fileChangeApprovals = useMemo(
     () => approvals.filter((approval) => approval.payload && approval.payload.type === 'file-change'),
@@ -274,10 +367,10 @@ export default function CodingPage() {
   );
 
   const selectedFileApproval = useMemo(
-    () => fileChangeApprovals.find((approval) => approval.id === fileChangeDraft.selectedApprovalId) || null,
-    [fileChangeApprovals, fileChangeDraft.selectedApprovalId],
+    () => fileChangeApprovals.find((approval) => approval.id === safeFileChangeDraft.selectedApprovalId) || null,
+    [fileChangeApprovals, safeFileChangeDraft.selectedApprovalId],
   );
-  const selectedFileApprovalPayload = (selectedFileApproval?.payload || null) as Record<string, unknown> | null;
+  const selectedFileApprovalPayload = (selectedFileApproval?.payload || null) as CodingFileChangeApprovalPayload | null;
 
   const lastSavedLabel = coding.lastSavedAt ? timeAgo(coding.lastSavedAt) : '—';
 
@@ -293,10 +386,12 @@ export default function CodingPage() {
           title: selectedLabels[0],
           summary: selectedLabels.join(' · '),
           payload: {
+            type: 'workspace-plan',
             promptDraft: coding.promptDraft,
             selectedActions: coding.selectedActionItems,
             agents: coding.enabledAgents,
             providers: coding.enabledProviders,
+            model: coding.model,
           },
         }),
       });
@@ -311,6 +406,7 @@ export default function CodingPage() {
             status: data.approval.status,
             createdAt: data.approval.createdAt || new Date().toISOString(),
             updatedAt: data.approval.updatedAt || new Date().toISOString(),
+            payload: data.approval.payload || null,
           },
           ...coding.approvals.filter((item) => item.id !== data.approval.id),
         ],
@@ -373,23 +469,23 @@ export default function CodingPage() {
 
   function loadNewSuggestions() {
     updateCoding({
-      suggestionsVersion: coding.suggestionsVersion + 1,
+      suggestionsVersion: safeSuggestionsVersion + 1,
       selectedActionItems: [],
     });
   }
 
   async function previewFileChange(createApproval = false) {
-    if (!fileChangeDraft.filePath.trim() || !fileChangeDraft.proposedContent.trim()) return;
+    if (!safeFileChangeDraft.filePath.trim() || !safeFileChangeDraft.proposedContent.trim()) return;
     setBusy(createApproval ? 'file-approval' : 'diff-preview');
     try {
       const response = await fetch('/api/coding/file-changes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          filePath: fileChangeDraft.filePath,
-          title: fileChangeDraft.title,
-          summary: fileChangeDraft.summary,
-          proposedContent: fileChangeDraft.proposedContent,
+          filePath: safeFileChangeDraft.filePath,
+          title: safeFileChangeDraft.title,
+          summary: safeFileChangeDraft.summary,
+          proposedContent: safeFileChangeDraft.proposedContent,
           createApproval,
         }),
       });
@@ -398,10 +494,10 @@ export default function CodingPage() {
 
       const patch: Partial<typeof coding> = {
         fileChangeDraft: {
-          ...fileChangeDraft,
+          ...safeFileChangeDraft,
           diffPreview: data.preview.diffPreview,
           currentContent: data.preview.currentContent,
-          selectedApprovalId: data.approval?.id || fileChangeDraft.selectedApprovalId,
+          selectedApprovalId: data.approval?.id || safeFileChangeDraft.selectedApprovalId,
         },
       };
 
@@ -417,7 +513,12 @@ export default function CodingPage() {
             payload: data.approval.payload || {
               type: 'file-change',
               filePath: data.preview.filePath,
+              exists: data.preview.exists,
               diffPreview: data.preview.diffPreview,
+              proposedContent: data.preview.proposedContent,
+              currentContent: data.preview.currentContent,
+              currentContentPreview: data.preview.currentContent,
+              proposedContentPreview: data.preview.proposedContent,
             },
           },
           ...approvals.filter((item) => item.id !== data.approval.id),
@@ -453,22 +554,22 @@ export default function CodingPage() {
 
   function selectFileApproval(approvalId: string) {
     const approval = fileChangeApprovals.find((item) => item.id === approvalId);
-    const payload = approval?.payload as Record<string, string> | null | undefined;
+    const payload = approval?.payload as CodingFileChangeApprovalPayload | null | undefined;
     updateCoding({
       fileChangeDraft: {
-        ...fileChangeDraft,
+        ...safeFileChangeDraft,
         selectedApprovalId: approvalId,
-        filePath: payload?.filePath || fileChangeDraft.filePath,
-        title: approval?.title || fileChangeDraft.title,
-        summary: approval?.summary || fileChangeDraft.summary,
-        proposedContent: payload?.proposedContent || fileChangeDraft.proposedContent,
-        currentContent: payload?.currentContent || fileChangeDraft.currentContent,
-        diffPreview: payload?.diffPreview || fileChangeDraft.diffPreview,
+        filePath: payload?.filePath || safeFileChangeDraft.filePath,
+        title: approval?.title || safeFileChangeDraft.title,
+        summary: approval?.summary || safeFileChangeDraft.summary,
+        proposedContent: payload?.proposedContent || safeFileChangeDraft.proposedContent,
+        currentContent: payload?.currentContent || safeFileChangeDraft.currentContent,
+        diffPreview: payload?.diffPreview || safeFileChangeDraft.diffPreview,
       },
     });
   }
 
-  function toggleProvider(provider: keyof typeof PROVIDER_LABELS) {
+  function toggleProvider(provider: CodingProvider) {
     const exists = coding.enabledProviders.includes(provider);
     const nextProviders = exists
       ? coding.enabledProviders.filter((item) => item !== provider)
@@ -480,8 +581,88 @@ export default function CodingPage() {
       provider: safeProviders.includes(coding.provider) ? coding.provider : safeProviders[0],
       model: safeProviders.includes(coding.provider)
         ? coding.model
-        : PROVIDER_MODELS[safeProviders[0]][0],
+        : (providerMap.get(safeProviders[0])?.models?.[0] || coding.model),
     });
+  }
+
+  function restoreSession(session: typeof coding.sessions[number]) {
+    if (session.workspaceState) {
+      updateCoding({
+        ...session.workspaceState,
+        promptDraft: session.workspaceState.promptDraft || session.input,
+        selectedActionItems: session.workspaceState.selectedActionItems || session.selectedActions,
+      });
+      return;
+    }
+
+    updateCoding({
+      promptDraft: session.input,
+      selectedActionItems: session.selectedActions,
+      activeSection: 'agent',
+    });
+  }
+
+  async function applyFileApproval(approvalId: string) {
+    setBusy(`apply-${approvalId}`);
+    try {
+      const response = await fetch('/api/coding/file-changes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ approvalId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to apply approved file change');
+
+      updateCoding({
+        approvals: approvals.map((approval) => (
+          approval.id === approvalId ? { ...approval, payload: data.approval?.payload || approval.payload, updatedAt: data.approval?.updatedAt || new Date().toISOString() } : approval
+        )),
+        fileChangeDraft: selectedFileApproval?.id === approvalId
+          ? {
+              ...safeFileChangeDraft,
+              currentContent: typeof data.approval?.payload?.proposedContent === 'string' ? data.approval.payload.proposedContent : safeFileChangeDraft.currentContent,
+            }
+          : safeFileChangeDraft,
+      });
+      const historyResponse = await fetch('/api/coding/file-changes/history', { cache: 'no-store' });
+      const historyData = await historyResponse.json();
+      if (historyResponse.ok && Array.isArray(historyData.history)) {
+        setFileHistory(historyData.history as CodingFileHistory[]);
+      }
+    } catch {
+      // noop for now
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function rollbackFileHistory(historyId: string) {
+    setBusy(`rollback-${historyId}`);
+    try {
+      const response = await fetch('/api/coding/file-changes/history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ historyId }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to rollback file change');
+      if (data.approval) {
+        updateCoding({
+          approvals: approvals.map((approval) => (
+            approval.id === data.approval.id ? { ...approval, payload: data.approval.payload || approval.payload, updatedAt: data.approval.updatedAt || new Date().toISOString() } : approval
+          )),
+        });
+      }
+      const historyResponse = await fetch('/api/coding/file-changes/history', { cache: 'no-store' });
+      const historyData = await historyResponse.json();
+      if (historyResponse.ok && Array.isArray(historyData.history)) {
+        setFileHistory(historyData.history as CodingFileHistory[]);
+      }
+    } catch {
+      // noop for now
+    } finally {
+      setBusy(null);
+    }
   }
 
   function renderAgentPanel() {
@@ -604,11 +785,11 @@ export default function CodingPage() {
           <div className="sm:col-span-2 space-y-2">
             <span className="text-xs text-muted-foreground">{t(language, 'codingApiKeysMulti')}</span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {Object.entries(PROVIDER_LABELS).map(([providerKey, providerLabel]) => {
-                const active = coding.enabledProviders.includes(providerKey as keyof typeof PROVIDER_LABELS);
+              {providerCatalog.map((profile) => {
+                const active = coding.enabledProviders.includes(profile.id);
                 return (
                   <label
-                    key={providerKey}
+                    key={profile.id}
                     className={`flex items-center gap-3 rounded-xl border px-3 py-3 cursor-pointer transition-colors ${
                       active ? 'border-primary/40 bg-primary/5' : 'border-border/40 hover:bg-muted/30'
                     }`}
@@ -616,10 +797,10 @@ export default function CodingPage() {
                     <input
                       type="checkbox"
                       checked={active}
-                      onChange={() => toggleProvider(providerKey as keyof typeof PROVIDER_LABELS)}
+                      onChange={() => toggleProvider(profile.id)}
                       className="h-4 w-4"
                     />
-                    <span className="text-sm font-medium">{providerLabel}</span>
+                    <span className="text-sm font-medium">{profile.label}</span>
                   </label>
                 );
               })}
@@ -630,10 +811,13 @@ export default function CodingPage() {
             <select
               className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
               value={coding.provider}
-              onChange={(e) => updateCoding({ provider: e.target.value as typeof coding.provider, model: PROVIDER_MODELS[e.target.value as keyof typeof PROVIDER_MODELS][0] })}
+              onChange={(e) => {
+                const nextProvider = e.target.value as CodingProvider;
+                updateCoding({ provider: nextProvider, model: providerMap.get(nextProvider)?.models?.[0] || coding.model });
+              }}
             >
               {coding.enabledProviders.map((provider) => (
-                <option key={provider} value={provider}>{PROVIDER_LABELS[provider]}</option>
+                <option key={provider} value={provider}>{providerMap.get(provider)?.label || provider}</option>
               ))}
             </select>
           </label>
@@ -644,7 +828,7 @@ export default function CodingPage() {
               value={coding.model}
               onChange={(e) => updateCoding({ model: e.target.value })}
             >
-              {PROVIDER_MODELS[coding.provider].map((model) => (
+              {currentProviderModels.map((model) => (
                 <option key={model} value={model}>{model}</option>
               ))}
             </select>
@@ -665,18 +849,18 @@ export default function CodingPage() {
           </div>
           <div className="rounded-xl border border-border/40 p-3 col-span-2">
             <div className="text-xs text-muted-foreground">{t(language, 'codingApiEndpoint')}</div>
-            <div className="mt-1 font-mono text-xs break-all">{providerStats.endpoint}</div>
+            <div className="mt-1 font-mono text-xs break-all">{providerStats?.endpoint || '—'}</div>
           </div>
           <div className="rounded-xl border border-border/40 p-3 col-span-2">
             <div className="text-xs text-muted-foreground">{t(language, 'codingApiCredits')}</div>
-            <div className="mt-1 font-medium">{providerStats.credits}</div>
+            <div className="mt-1 font-medium">{providerStats?.credits || '—'}</div>
           </div>
         </div>
 
         <div className="rounded-xl border border-border/40 p-3 bg-muted/10 text-xs text-muted-foreground space-y-1">
           <div className="font-medium text-foreground">{t(language, 'codingApiProfilesPrepared')}</div>
           <div>{t(language, 'codingApiProfilesHint')}</div>
-          <div className="pt-1">{t(language, 'codingApiActiveProviders')}: {coding.enabledProviders.map((provider) => PROVIDER_LABELS[provider]).join(', ')}</div>
+          <div className="pt-1">{t(language, 'codingApiActiveProviders')}: {coding.enabledProviders.map((provider) => providerMap.get(provider)?.label || provider).join(', ')}</div>
         </div>
       </div>
     );
@@ -772,7 +956,7 @@ export default function CodingPage() {
                 <div className="flex flex-wrap gap-2">
                   <button
                     className="btn btn-ghost btn-xs"
-                    onClick={() => updateCoding({ promptDraft: session.input, activeSection: 'agent' })}
+                    onClick={() => restoreSession(session)}
                   >
                     <RefreshCw size={12} /> {t(language, 'codingRestoreSession')}
                   </button>
@@ -816,6 +1000,9 @@ export default function CodingPage() {
                     </button>
                     <button className="btn btn-ghost btn-xs" onClick={() => void updateApprovalStatus(approval.id, 'rejected')} disabled={approval.status !== 'pending' || busy === `approval-rejected-${approval.id}`}>
                       <Trash2 size={12} /> {t(language, 'codingReject')}
+                    </button>
+                    <button className="btn btn-primary btn-xs" onClick={() => void applyFileApproval(approval.id)} disabled={approval.status !== 'approved' || busy === `apply-${approval.id}` || Boolean((approval.payload as CodingFileChangeApprovalPayload | null)?.appliedAt)}>
+                      <ShieldCheck size={12} /> {((approval.payload as CodingFileChangeApprovalPayload | null)?.appliedAt) ? t(language, 'codingApplied') : t(language, 'codingApplyChange')}
                     </button>
                   </div>
                 )}
@@ -1004,8 +1191,8 @@ export default function CodingPage() {
                 <label className="space-y-2 block">
                   <span className="text-xs text-muted-foreground">{t(language, 'codingFilePath')}</span>
                   <input
-                    value={fileChangeDraft.filePath}
-                    onChange={(event) => updateCoding({ fileChangeDraft: { ...fileChangeDraft, filePath: event.target.value } })}
+                    value={safeFileChangeDraft.filePath}
+                    onChange={(event) => updateCoding({ fileChangeDraft: { ...safeFileChangeDraft, filePath: event.target.value } })}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
                     placeholder="src/app/coding/page.tsx"
                   />
@@ -1013,33 +1200,33 @@ export default function CodingPage() {
                 <label className="space-y-2 block">
                   <span className="text-xs text-muted-foreground">{t(language, 'codingChangeTitle')}</span>
                   <input
-                    value={fileChangeDraft.title}
-                    onChange={(event) => updateCoding({ fileChangeDraft: { ...fileChangeDraft, title: event.target.value } })}
+                    value={safeFileChangeDraft.title}
+                    onChange={(event) => updateCoding({ fileChangeDraft: { ...safeFileChangeDraft, title: event.target.value } })}
                     className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
                   />
                 </label>
                 <label className="space-y-2 block">
                   <span className="text-xs text-muted-foreground">{t(language, 'codingChangeSummary')}</span>
                   <textarea
-                    value={fileChangeDraft.summary}
-                    onChange={(event) => updateCoding({ fileChangeDraft: { ...fileChangeDraft, summary: event.target.value } })}
+                    value={safeFileChangeDraft.summary}
+                    onChange={(event) => updateCoding({ fileChangeDraft: { ...safeFileChangeDraft, summary: event.target.value } })}
                     className="w-full min-h-[80px] px-3 py-2 rounded-lg border border-border bg-background text-sm"
                   />
                 </label>
                 <label className="space-y-2 block">
                   <span className="text-xs text-muted-foreground">{t(language, 'codingProposedContent')}</span>
                   <textarea
-                    value={fileChangeDraft.proposedContent}
-                    onChange={(event) => updateCoding({ fileChangeDraft: { ...fileChangeDraft, proposedContent: event.target.value } })}
+                    value={safeFileChangeDraft.proposedContent}
+                    onChange={(event) => updateCoding({ fileChangeDraft: { ...safeFileChangeDraft, proposedContent: event.target.value } })}
                     className="w-full min-h-[220px] px-3 py-2 rounded-lg border border-border bg-background font-mono text-xs"
                     placeholder={t(language, 'codingProposedContentPlaceholder')}
                   />
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  <button className="btn btn-ghost btn-sm" onClick={() => void previewFileChange(false)} disabled={!fileChangeDraft.filePath.trim() || !fileChangeDraft.proposedContent.trim() || busy === 'diff-preview'}>
+                  <button className="btn btn-ghost btn-sm" onClick={() => void previewFileChange(false)} disabled={!safeFileChangeDraft.filePath.trim() || !safeFileChangeDraft.proposedContent.trim() || busy === 'diff-preview'}>
                     {busy === 'diff-preview' ? <LoaderCircle size={14} className="animate-spin" /> : <Search size={14} />} {t(language, 'codingGenerateDiff')}
                   </button>
-                  <button className="btn btn-primary btn-sm" onClick={() => void previewFileChange(true)} disabled={!fileChangeDraft.filePath.trim() || !fileChangeDraft.proposedContent.trim() || busy === 'file-approval'}>
+                  <button className="btn btn-primary btn-sm" onClick={() => void previewFileChange(true)} disabled={!safeFileChangeDraft.filePath.trim() || !safeFileChangeDraft.proposedContent.trim() || busy === 'file-approval'}>
                     {busy === 'file-approval' ? <LoaderCircle size={14} className="animate-spin" /> : <ShieldCheck size={14} />} {t(language, 'codingCreateFileApproval')}
                   </button>
                 </div>
@@ -1056,17 +1243,17 @@ export default function CodingPage() {
                     </div>
                   </div>
                   {selectedFileApproval && (
-                    <button className="btn btn-ghost btn-xs" onClick={() => updateCoding({ fileChangeDraft: { ...fileChangeDraft, selectedApprovalId: null } })}>
+                    <button className="btn btn-ghost btn-xs" onClick={() => updateCoding({ fileChangeDraft: { ...safeFileChangeDraft, selectedApprovalId: null } })}>
                       {t(language, 'codingBackToDraft')}
                     </button>
                   )}
                 </div>
                 <div className="rounded-lg border border-border/40 p-3 bg-muted/10 text-xs text-muted-foreground">
-                  <div>{t(language, 'codingFilePath')}: {typeof selectedFileApprovalPayload?.filePath === 'string' ? selectedFileApprovalPayload.filePath : fileChangeDraft.filePath || '—'}</div>
+                  <div>{t(language, 'codingFilePath')}: {typeof selectedFileApprovalPayload?.filePath === 'string' ? selectedFileApprovalPayload.filePath : safeFileChangeDraft.filePath || '—'}</div>
                   <div className="mt-1">{t(language, 'codingDiffStatus')}: {selectedFileApprovalPayload?.exists === false ? t(language, 'codingDiffNewFile') : t(language, 'codingDiffExistingFile')}</div>
                 </div>
                 <pre className="min-h-[320px] max-h-[460px] overflow-auto rounded-xl border border-border/40 bg-[#07101f] p-4 text-[11px] leading-5 text-slate-200 whitespace-pre-wrap">
-{(typeof selectedFileApprovalPayload?.diffPreview === 'string' ? selectedFileApprovalPayload.diffPreview : fileChangeDraft.diffPreview || t(language, 'codingNoDiffYet'))}
+{(typeof selectedFileApprovalPayload?.diffPreview === 'string' ? selectedFileApprovalPayload.diffPreview : safeFileChangeDraft.diffPreview || t(language, 'codingNoDiffYet'))}
                 </pre>
               </div>
             </div>
@@ -1106,6 +1293,42 @@ export default function CodingPage() {
                 <span className="font-medium text-foreground">{lastSavedLabel}</span>
               </div>
             </div>
+          </div>
+
+          <div className="panel p-5 space-y-4">
+            <div>
+              <h2 className="text-sm font-semibold flex items-center gap-2">
+                <History size={16} className="text-primary" /> {t(language, 'codingRollbackHistory')}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-1">{t(language, 'codingApprovalNotice')}</p>
+            </div>
+
+            {fileHistory.length === 0 ? (
+              <div className="text-sm text-muted-foreground">{t(language, 'codingNoHistoryYet')}</div>
+            ) : (
+              <div className="space-y-3 max-h-[360px] overflow-y-auto">
+                {fileHistory.map((entry) => (
+                  <div key={entry.id} className="rounded-xl border border-border/40 bg-muted/10 p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-medium">{entry.filePath}</div>
+                        <div className="text-[11px] text-muted-foreground mt-1">
+                          {entry.action === 'applied' ? t(language, 'codingHistoryApplied') : t(language, 'codingHistoryRolledBack')} · {timeAgo(entry.createdAt)}
+                        </div>
+                      </div>
+                      {entry.action === 'applied' && (
+                        <button className="btn btn-ghost btn-xs" onClick={() => void rollbackFileHistory(entry.id)} disabled={busy === `rollback-${entry.id}`}>
+                          {busy === `rollback-${entry.id}` ? <LoaderCircle size={12} className="animate-spin" /> : <RefreshCw size={12} />} {t(language, 'codingRollback')}
+                        </button>
+                      )}
+                    </div>
+                    <pre className="max-h-[180px] overflow-auto rounded-lg border border-border/40 bg-[#07101f] p-3 text-[10px] leading-5 text-slate-200 whitespace-pre-wrap">
+{entry.diffPreview}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>

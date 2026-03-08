@@ -237,6 +237,7 @@ function migrate(db: Database.Database) {
       status TEXT NOT NULL DEFAULT 'saved',
       agents_json TEXT NOT NULL DEFAULT '[]',
       selected_actions_json TEXT NOT NULL DEFAULT '[]',
+      workspace_state_json TEXT,
       created_by TEXT,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -274,8 +275,53 @@ function migrate(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_coding_approvals_status ON coding_approvals(status);
     CREATE INDEX IF NOT EXISTS idx_coding_approvals_updated ON coding_approvals(updated_at DESC);
 
+    CREATE TABLE IF NOT EXISTS coding_file_change_history (
+      id TEXT PRIMARY KEY,
+      approval_id TEXT NOT NULL,
+      file_path TEXT NOT NULL,
+      action TEXT NOT NULL,
+      before_content TEXT,
+      after_content TEXT,
+      diff_preview TEXT,
+      actor TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_coding_file_history_approval ON coding_file_change_history(approval_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_coding_file_history_file ON coding_file_change_history(file_path, created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS mail_folders (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      system_key TEXT UNIQUE,
+      color TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_mail_folders_sort ON mail_folders(sort_order ASC, updated_at ASC);
+
+    CREATE TABLE IF NOT EXISTS mail_threads (
+      id TEXT PRIMARY KEY,
+      folder_id TEXT NOT NULL REFERENCES mail_folders(id) ON DELETE CASCADE,
+      mailbox TEXT NOT NULL,
+      from_name TEXT,
+      from_email TEXT NOT NULL,
+      to_email TEXT NOT NULL,
+      subject TEXT NOT NULL,
+      preview TEXT,
+      body TEXT,
+      tags_json TEXT,
+      unread INTEGER NOT NULL DEFAULT 0,
+      starred INTEGER NOT NULL DEFAULT 0,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_mail_threads_folder ON mail_threads(folder_id, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_mail_threads_starred ON mail_threads(starred, updated_at DESC);
+
   `);
 
   // Column migrations (safe to re-run)
   try { db.exec("ALTER TABLE leads ADD COLUMN pause_outreach INTEGER DEFAULT 0"); } catch { /* column exists */ }
+  try { db.exec("ALTER TABLE coding_sessions ADD COLUMN workspace_state_json TEXT"); } catch { /* column exists */ }
 }

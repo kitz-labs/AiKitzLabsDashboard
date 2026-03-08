@@ -6,21 +6,9 @@ import type {
   ContentPost, Lead, Sequence, Suppression, Engagement,
   Signal, Experiment, Learning, DailyMetrics, ActivityEntry,
   OverviewStats, Alert, FunnelStep, WeeklyKPI,
+  CodingAgentId, CodingApprovalPayload, CodingApprovalMode, CodingMobileView,
+  CodingMode, CodingProvider, CodingReasoningMode, CodingSection, CodingWorkspaceState,
 } from '@/types';
-
-type CodingSection = 'agent' | 'api' | 'files' | 'sessions';
-type CodingMode = 'balanced' | 'pro' | 'ultra';
-type CodingReasoningMode = 'fast' | 'precise' | 'architecture' | 'refactor' | 'ux' | 'debug';
-type CodingApprovalMode = 'ask-first' | 'review-first' | 'execute-approved';
-type CodingMobileView = 'smart' | 'workspace' | 'controls';
-type CodingAgentId =
-  | 'github-copilot'
-  | 'app-architect'
-  | 'full-stack-builder'
-  | 'qa-guardian'
-  | 'ux-optimizer'
-  | 'research-scout';
-type CodingProvider = 'openai' | 'anthropic' | 'google' | 'openrouter';
 
 interface CodingKnowledgeFile {
   id: string;
@@ -41,6 +29,8 @@ interface CodingSession {
   updatedAt: string;
   status: 'active' | 'saved' | 'archived';
   agents: CodingAgentId[];
+  selectedActions: string[];
+  workspaceState: CodingWorkspaceState | null;
 }
 
 interface CodingApproval {
@@ -50,7 +40,7 @@ interface CodingApproval {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
-  payload?: Record<string, unknown> | null;
+  payload?: CodingApprovalPayload | null;
 }
 
 interface CodingFileChangeDraft {
@@ -90,6 +80,74 @@ interface CodingState {
   suggestionsVersion: number;
   fileChangeDraft: CodingFileChangeDraft;
 }
+
+const defaultCodingState: CodingState = {
+  activeSection: 'agent',
+  enabledAgents: ['github-copilot', 'app-architect', 'full-stack-builder'],
+  enabledProviders: ['openai', 'anthropic'],
+  mode: 'ultra',
+  reasoningMode: 'architecture',
+  approvalMode: 'ask-first',
+  mobileView: 'smart',
+  provider: 'openai',
+  model: 'gpt-5.4',
+  apiHealth: 'healthy',
+  autosaveEnabled: true,
+  autosaveMinutes: 30,
+  lastSavedAt: null,
+  promptDraft: '',
+  knowledgeFiles: [
+    {
+      id: 'core-dashboard-spec',
+      name: 'dashboard-core-spec.md',
+      type: 'text/markdown',
+      size: 18240,
+      category: 'core',
+      contentPreview: 'Core architecture, navigation rules, visual language, coding standards, and approval workflow for AI Kitz Labs Dashboard.',
+      addedAt: '2026-03-08T09:00:00.000Z',
+    },
+    {
+      id: 'memory-product-roadmap',
+      name: 'product-memory-roadmap.md',
+      type: 'text/markdown',
+      size: 9640,
+      category: 'memory',
+      contentPreview: 'Persistent learning notes, future modules, branding decisions, mobile priorities, and session checkpoints.',
+      addedAt: '2026-03-08T09:10:00.000Z',
+    },
+  ],
+  sessions: [
+    {
+      id: 'coding-session-bootstrap',
+      title: 'App Evolution Control Center',
+      summary: 'Initial ultra-pro coding agent configuration for the dashboard.',
+      input: 'Create a professional coding control center for ongoing app development.',
+      output: 'Prepared navigation, persistent knowledge base, approval-first app changes, and mobile-friendly control surfaces.',
+      updatedAt: '2026-03-08T09:15:00.000Z',
+      status: 'active',
+      agents: ['github-copilot', 'app-architect'],
+      selectedActions: [],
+      workspaceState: null,
+    },
+  ],
+  approvals: [],
+  browserEnabled: true,
+  canEditApp: true,
+  approvalRequired: true,
+  learningEnabled: true,
+  dailyLearning: true,
+  selectedActionItems: [],
+  suggestionsVersion: 0,
+  fileChangeDraft: {
+    filePath: 'src/app/coding/page.tsx',
+    title: 'Improve Coding workspace UX',
+    summary: 'Prepare a reviewed file change before applying app modifications.',
+    proposedContent: '',
+    diffPreview: '',
+    currentContent: '',
+    selectedApprovalId: null,
+  },
+};
 
 interface DashboardState {
   // Data
@@ -170,71 +228,7 @@ export const useDashboard = create<DashboardState>()(persist((set, get) => ({
   language: 'en',
   openClawEnabled: false,
   openClawMode: 'local',
-  coding: {
-    activeSection: 'agent',
-    enabledAgents: ['github-copilot', 'app-architect', 'full-stack-builder'],
-    enabledProviders: ['openai', 'anthropic'],
-    mode: 'ultra',
-    reasoningMode: 'architecture',
-    approvalMode: 'ask-first',
-    mobileView: 'smart',
-    provider: 'openai',
-    model: 'gpt-5.4',
-    apiHealth: 'healthy',
-    autosaveEnabled: true,
-    autosaveMinutes: 30,
-    lastSavedAt: null,
-    promptDraft: '',
-    knowledgeFiles: [
-      {
-        id: 'core-dashboard-spec',
-        name: 'dashboard-core-spec.md',
-        type: 'text/markdown',
-        size: 18240,
-        category: 'core',
-        contentPreview: 'Core architecture, navigation rules, visual language, coding standards, and approval workflow for AI Kitz Labs Dashboard.',
-        addedAt: '2026-03-08T09:00:00.000Z',
-      },
-      {
-        id: 'memory-product-roadmap',
-        name: 'product-memory-roadmap.md',
-        type: 'text/markdown',
-        size: 9640,
-        category: 'memory',
-        contentPreview: 'Persistent learning notes, future modules, branding decisions, mobile priorities, and session checkpoints.',
-        addedAt: '2026-03-08T09:10:00.000Z',
-      },
-    ],
-    sessions: [
-      {
-        id: 'coding-session-bootstrap',
-        title: 'App Evolution Control Center',
-        summary: 'Initial ultra-pro coding agent configuration for the dashboard.',
-        input: 'Create a professional coding control center for ongoing app development.',
-        output: 'Prepared navigation, persistent knowledge base, approval-first app changes, and mobile-friendly control surfaces.',
-        updatedAt: '2026-03-08T09:15:00.000Z',
-        status: 'active',
-        agents: ['github-copilot', 'app-architect'],
-      },
-    ],
-    approvals: [],
-    browserEnabled: true,
-    canEditApp: true,
-    approvalRequired: true,
-    learningEnabled: true,
-    dailyLearning: true,
-    selectedActionItems: [],
-    suggestionsVersion: 0,
-    fileChangeDraft: {
-      filePath: 'src/app/coding/page.tsx',
-      title: 'Improve Coding workspace UX',
-      summary: 'Prepare a reviewed file change before applying app modifications.',
-      proposedContent: '',
-      diffPreview: '',
-      currentContent: '',
-      selectedApprovalId: null,
-    },
-  },
+  coding: defaultCodingState,
 
   setOverview: (data) => set({ overview: data }),
   setAlerts: (data) => set({ alerts: data }),
@@ -303,6 +297,25 @@ export const useDashboard = create<DashboardState>()(persist((set, get) => ({
       updatedAt: now,
       status: 'saved',
       agents: current.enabledAgents,
+      selectedActions: current.selectedActionItems,
+      workspaceState: {
+        activeSection: current.activeSection,
+        enabledAgents: current.enabledAgents,
+        enabledProviders: current.enabledProviders,
+        mode: current.mode,
+        reasoningMode: current.reasoningMode,
+        approvalMode: current.approvalMode,
+        mobileView: current.mobileView,
+        provider: current.provider,
+        model: current.model,
+        promptDraft: current.promptDraft,
+        selectedActionItems: current.selectedActionItems,
+        approvalRequired: current.approvalRequired,
+        browserEnabled: current.browserEnabled,
+        canEditApp: current.canEditApp,
+        learningEnabled: current.learningEnabled,
+        dailyLearning: current.dailyLearning,
+      },
     };
 
     set((s) => ({
@@ -324,6 +337,46 @@ export const useDashboard = create<DashboardState>()(persist((set, get) => ({
   })),
 }), {
   name: 'hermes-dashboard',
+  merge: (persistedState, currentState) => {
+    const persisted = (persistedState as Partial<DashboardState> | undefined) ?? {};
+    const persistedCoding = persisted.coding as Partial<CodingState> | undefined;
+
+    return {
+      ...currentState,
+      ...persisted,
+      coding: {
+        ...defaultCodingState,
+        ...currentState.coding,
+        ...persistedCoding,
+        fileChangeDraft: {
+          ...defaultCodingState.fileChangeDraft,
+          ...currentState.coding.fileChangeDraft,
+          ...(persistedCoding?.fileChangeDraft ?? {}),
+        },
+        knowledgeFiles: Array.isArray(persistedCoding?.knowledgeFiles)
+          ? persistedCoding.knowledgeFiles
+          : currentState.coding.knowledgeFiles,
+        sessions: Array.isArray(persistedCoding?.sessions)
+          ? persistedCoding.sessions
+          : currentState.coding.sessions,
+        approvals: Array.isArray(persistedCoding?.approvals)
+          ? persistedCoding.approvals
+          : currentState.coding.approvals,
+        enabledAgents: Array.isArray(persistedCoding?.enabledAgents) && persistedCoding.enabledAgents.length > 0
+          ? persistedCoding.enabledAgents
+          : currentState.coding.enabledAgents,
+        enabledProviders: Array.isArray(persistedCoding?.enabledProviders) && persistedCoding.enabledProviders.length > 0
+          ? persistedCoding.enabledProviders
+          : currentState.coding.enabledProviders,
+        selectedActionItems: Array.isArray(persistedCoding?.selectedActionItems)
+          ? persistedCoding.selectedActionItems
+          : currentState.coding.selectedActionItems,
+        suggestionsVersion: typeof persistedCoding?.suggestionsVersion === 'number'
+          ? persistedCoding.suggestionsVersion
+          : currentState.coding.suggestionsVersion,
+      },
+    } satisfies DashboardState;
+  },
   partialize: (state) => ({
     language: state.language,
     openClawEnabled: state.openClawEnabled,

@@ -107,6 +107,80 @@ interface ApiProviderProfile {
   referer?: string;
 }
 
+interface CliPreset {
+  connection: string;
+  endpoint: string;
+  profile: string;
+  token: string;
+  commands: string[];
+}
+
+const CLI_PRESETS: Record<string, CliPreset> = {
+  Mail: {
+    connection: 'Local',
+    endpoint: 'https://api.aikitz.at/mail',
+    profile: 'production',
+    token: 'mail_live_ops',
+    commands: ['aikitz mail sync --profile production', 'aikitz mail watch --folder inbox', 'aikitz mail send-test --from ceo@aikitz.at'],
+  },
+  WhatsApp: {
+    connection: 'SSH',
+    endpoint: 'https://api.aikitz.at/whatsapp',
+    profile: 'production',
+    token: 'wa_ops_bridge',
+    commands: ['aikitz whatsapp login --profile production', 'aikitz whatsapp sync --contacts', 'aikitz whatsapp broadcast --dry-run'],
+  },
+  Telegram: {
+    connection: 'SSH',
+    endpoint: 'https://api.aikitz.at/telegram',
+    profile: 'production',
+    token: 'telegram_bot_ops',
+    commands: ['aikitz telegram connect --bot lead-qualifier', 'aikitz telegram sync --channels', 'aikitz telegram broadcast --preview'],
+  },
+  Websites: {
+    connection: 'Docker',
+    endpoint: 'https://api.aikitz.at/websites',
+    profile: 'production',
+    token: 'web_runtime_ops',
+    commands: ['aikitz web status', 'aikitz web deploy --target production', 'aikitz web logs --tail 200'],
+  },
+  Instagram: {
+    connection: 'GitHub Actions',
+    endpoint: 'https://api.aikitz.at/instagram',
+    profile: 'production',
+    token: 'instagram_publish_ops',
+    commands: ['aikitz instagram auth', 'aikitz instagram schedule --next', 'aikitz instagram insights --last 7d'],
+  },
+  Facebook: {
+    connection: 'GitHub Actions',
+    endpoint: 'https://api.aikitz.at/facebook',
+    profile: 'production',
+    token: 'facebook_campaign_ops',
+    commands: ['aikitz facebook connect', 'aikitz facebook campaigns --active', 'aikitz facebook inbox sync'],
+  },
+  LinkedIn: {
+    connection: 'Docker',
+    endpoint: 'https://api.aikitz.at/linkedin',
+    profile: 'production',
+    token: 'linkedin_growth_ops',
+    commands: ['aikitz linkedin status', 'aikitz linkedin publish --draft next', 'aikitz linkedin leads sync'],
+  },
+  Stripe: {
+    connection: 'Kubernetes',
+    endpoint: 'https://api.aikitz.at/stripe',
+    profile: 'production',
+    token: 'stripe_billing_ops',
+    commands: ['aikitz stripe status', 'aikitz stripe reconcile --today', 'aikitz stripe webhooks test'],
+  },
+  Files: {
+    connection: 'Local',
+    endpoint: 'https://api.aikitz.at/files',
+    profile: 'production',
+    token: 'files_pipeline_ops',
+    commands: ['aikitz files import ./dropzone', 'aikitz files validate --all', 'aikitz files export --format csv'],
+  },
+};
+
 interface MemoryEffectPayload {
   instance: string;
   available: boolean;
@@ -158,8 +232,11 @@ export default function SettingsPage() {
   const [memoryEffects, setMemoryEffects] = useState<Record<InstanceId, MemoryEffectPayload | null>>({});
   const [cliApp, setCliApp] = useState('Mail');
   const [cliConnection, setCliConnection] = useState('Local');
+  const [cliProfileName, setCliProfileName] = useState('production');
   const [cliSessions, setCliSessions] = useState<Array<{ id: string; app: string; connection: string }>>([
-    { id: 'macos-cli-01', app: 'Mail', connection: 'Local' },
+    { id: 'local-mail', app: 'Mail', connection: 'Local' },
+    { id: 'ssh-whatsapp', app: 'WhatsApp', connection: 'SSH' },
+    { id: 'docker-linkedin', app: 'LinkedIn', connection: 'Docker' },
   ]);
   const cliApps = ['Mail', 'WhatsApp', 'Telegram', 'Websites', 'Instagram', 'Facebook', 'LinkedIn', 'Stripe', 'Files'];
   const [apiProvider, setApiProvider] = useState<ApiProvider>('openai');
@@ -222,6 +299,7 @@ export default function SettingsPage() {
   ];
 
   const currentApiProfile = apiProfiles[apiProvider];
+  const currentCliPreset = CLI_PRESETS[cliApp] || CLI_PRESETS.Mail;
 
   const updateApiProfile = (field: keyof ApiProviderProfile, value: string) => {
     setApiProfiles((prev) => ({
@@ -244,6 +322,12 @@ export default function SettingsPage() {
   const disconnectCli = () => {
     setCliSessions((prev) => prev.filter((s) => s.app !== cliApp));
   };
+
+  useEffect(() => {
+    const preset = CLI_PRESETS[cliApp] || CLI_PRESETS.Mail;
+    setCliConnection(preset.connection);
+    setCliProfileName(preset.profile);
+  }, [cliApp]);
 
   useEffect(() => {
     let alive = true;
@@ -814,7 +898,7 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="text-sm font-medium">support@aikitz.at</div>
+                    <div className="text-sm font-medium">ceo@aikitz.at</div>
                     <div className="text-[11px] text-muted-foreground">{t(language, 'mailSupport')}</div>
                   </div>
                   <span className="text-[10px] text-success">{t(language, 'settingsActive')}</span>
@@ -1082,20 +1166,20 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <div className="text-xs text-muted-foreground">{t(language, 'cliEndpoint')}</div>
-              <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" value="https://api.aikitz.at" readOnly />
+              <input className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" value={currentCliPreset.endpoint} readOnly />
             </div>
             <div className="space-y-2">
               <div className="text-xs text-muted-foreground">{t(language, 'cliProfile')}</div>
-              <select className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm">
-                <option>production</option>
-                <option>staging</option>
-                <option>local</option>
+              <select className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm" value={cliProfileName} onChange={(e) => setCliProfileName(e.target.value)}>
+                <option value={cliProfileName}>{cliProfileName}</option>
+                <option value="staging">staging</option>
+                <option value="local">local</option>
               </select>
             </div>
             <div className="space-y-2 md:col-span-2">
               <div className="text-xs text-muted-foreground">{t(language, 'cliToken')}</div>
               <div className="flex items-center gap-2">
-                <input className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm" type="password" value="••••••••••" readOnly />
+                <input className="flex-1 px-3 py-2 rounded-lg border border-border bg-background text-sm" type="password" value={currentCliPreset.token} readOnly />
                 <button className="btn btn-ghost btn-sm">{t(language, 'cliGenerateToken')}</button>
               </div>
             </div>
@@ -1103,6 +1187,11 @@ export default function SettingsPage() {
           <div className="flex flex-wrap gap-2 mt-3">
             <button className="btn btn-primary btn-sm" onClick={connectCli}>{t(language, 'cliConnect')}</button>
             <button className="btn btn-ghost btn-sm" onClick={disconnectCli}>{t(language, 'cliDisconnect')}</button>
+          </div>
+          <div className="rounded-xl border border-border/50 p-3 mt-3 bg-primary/5">
+            <div className="text-xs text-muted-foreground mb-1">Ready profile</div>
+            <div className="text-sm font-medium">{cliApp} · {currentCliPreset.connection} · {currentCliPreset.profile}</div>
+            <div className="text-[11px] text-muted-foreground mt-1">Endpoint: {currentCliPreset.endpoint}</div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
             <div className="rounded-xl border border-border/50 p-3 space-y-2">
@@ -1120,11 +1209,7 @@ export default function SettingsPage() {
             </div>
             <div className="rounded-xl border border-border/50 p-3 space-y-2">
               <div className="text-xs text-muted-foreground">{t(language, 'cliCommands')}</div>
-              {[
-                'aikitz status',
-                'aikitz sync --profile production',
-                'aikitz logs --tail 200',
-              ].map((cmd) => (
+              {currentCliPreset.commands.map((cmd) => (
                 <div key={cmd} className="flex items-center justify-between gap-2">
                   <code className="text-[11px] bg-muted/40 px-2 py-1 rounded">{cmd}</code>
                   <button className="btn btn-ghost btn-xs">{t(language, 'cliCopy')}</button>

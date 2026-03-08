@@ -3,6 +3,8 @@ export type Capability =
   | 'read_dashboard'
   | 'write_ops'
   | 'approve_automations'
+  | 'review_coding_changes'
+  | 'execute_workspace_changes'
   | 'chat_send'
   | 'manage_users'
   | 'view_audit'
@@ -12,6 +14,8 @@ export const CAPABILITY_DEFINITIONS: { key: Capability; label: string }[] = [
   { key: 'read_dashboard', label: 'Read dashboards' },
   { key: 'write_ops', label: 'CRM, content, sequences write' },
   { key: 'approve_automations', label: 'Automations approval' },
+  { key: 'review_coding_changes', label: 'Review coding approvals' },
+  { key: 'execute_workspace_changes', label: 'Apply approved workspace changes' },
   { key: 'chat_send', label: 'Chat send' },
   { key: 'manage_users', label: 'Manage users & login requests' },
   { key: 'view_audit', label: 'Audit log access' },

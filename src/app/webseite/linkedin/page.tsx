@@ -1,6 +1,7 @@
 'use client';
 
 import { BarChart3, Briefcase, CalendarDays } from 'lucide-react';
+import { LinkedinIcon } from '@/components/ui/platform-icons';
 import { useDashboard } from '@/store';
 import { t } from '@/lib/i18n';
 
@@ -11,7 +12,7 @@ export default function LinkedInPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header">
-          <h1 className="text-xl font-semibold">{t(language, 'titleLinkedIn')}</h1>
+          <h1 className="text-xl font-semibold flex items-center gap-2"><LinkedinIcon size={18} className="text-sky-600" /> {t(language, 'titleLinkedIn')}</h1>
           <p className="text-sm text-muted-foreground">{t(language, 'websiteSubtitle')}</p>
         </div>
       </div>

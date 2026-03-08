@@ -22,7 +22,12 @@ export const metadata: Metadata = {
   description: "Open-source marketing operations control center for AI agent teams",
   icons: {
     icon: "/logo.png",
+    shortcut: "/logo.png",
     apple: "/logo.png",
+    other: {
+      rel: 'mask-icon',
+      url: '/ai-kitz-labs-logo.svg',
+    },
   },
 };
 

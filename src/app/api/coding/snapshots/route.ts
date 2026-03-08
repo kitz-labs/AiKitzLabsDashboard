@@ -3,6 +3,7 @@ import { requireApiEditor } from '@/lib/api-auth';
 import { requireUser } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { upsertCodingSession } from '@/lib/coding';
+import type { CodingWorkspaceState } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,6 +26,7 @@ export async function POST(request: NextRequest) {
     status: 'saved',
     agents: Array.isArray(body.agents) ? body.agents : [],
     selectedActions: Array.isArray(body.selectedActions) ? body.selectedActions : [],
+    workspaceState: body.workspaceState && typeof body.workspaceState === 'object' ? body.workspaceState as CodingWorkspaceState : null,
     createdBy: actor.username,
   });
 

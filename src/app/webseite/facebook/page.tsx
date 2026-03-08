@@ -1,6 +1,7 @@
 'use client';
 
 import { BarChart3, Users, CalendarClock } from 'lucide-react';
+import { FacebookIcon } from '@/components/ui/platform-icons';
 import { useDashboard } from '@/store';
 import { t } from '@/lib/i18n';
 
@@ -11,7 +12,7 @@ export default function FacebookPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header">
-          <h1 className="text-xl font-semibold">{t(language, 'titleFacebook')}</h1>
+          <h1 className="text-xl font-semibold flex items-center gap-2"><FacebookIcon size={18} className="text-blue-500" /> {t(language, 'titleFacebook')}</h1>
           <p className="text-sm text-muted-foreground">{t(language, 'websiteSubtitle')}</p>
         </div>
       </div>

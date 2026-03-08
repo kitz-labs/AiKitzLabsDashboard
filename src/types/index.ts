@@ -404,3 +404,115 @@ export interface ChatConversation {
   unread_count: number;
   last_message: ChatMessage | null;
 }
+
+export type CodingSection = 'agent' | 'api' | 'files' | 'sessions';
+export type CodingMode = 'balanced' | 'pro' | 'ultra';
+export type CodingReasoningMode = 'fast' | 'precise' | 'architecture' | 'refactor' | 'ux' | 'debug';
+export type CodingApprovalMode = 'ask-first' | 'review-first' | 'execute-approved';
+export type CodingMobileView = 'smart' | 'workspace' | 'controls';
+export type CodingAgentId =
+  | 'github-copilot'
+  | 'app-architect'
+  | 'full-stack-builder'
+  | 'qa-guardian'
+  | 'ux-optimizer'
+  | 'research-scout';
+export type CodingProvider = 'openai' | 'anthropic' | 'google' | 'openrouter';
+export type CodingProviderHealth = 'healthy' | 'warning' | 'offline';
+export type CodingFileCategory = 'docs' | 'flows' | 'core' | 'memory' | 'uploads';
+export type CodingSessionStatus = 'active' | 'saved' | 'archived';
+export type CodingApprovalStatus = 'pending' | 'approved' | 'rejected';
+
+export interface CodingWorkspaceState {
+  activeSection: CodingSection;
+  enabledAgents: CodingAgentId[];
+  enabledProviders: CodingProvider[];
+  mode: CodingMode;
+  reasoningMode: CodingReasoningMode;
+  approvalMode: CodingApprovalMode;
+  mobileView: CodingMobileView;
+  provider: CodingProvider;
+  model: string;
+  promptDraft: string;
+  selectedActionItems: string[];
+  approvalRequired: boolean;
+  browserEnabled: boolean;
+  canEditApp: boolean;
+  learningEnabled: boolean;
+  dailyLearning: boolean;
+}
+
+export interface CodingPlanApprovalPayload {
+  type: 'workspace-plan';
+  promptDraft: string;
+  selectedActions: string[];
+  agents: CodingAgentId[];
+  providers: CodingProvider[];
+  model: string;
+}
+
+export interface CodingFileChangeApprovalPayload {
+  type: 'file-change';
+  filePath: string;
+  exists: boolean;
+  diffPreview: string;
+  proposedContent: string;
+  currentContent: string;
+  currentContentPreview: string;
+  proposedContentPreview: string;
+  appliedAt?: string | null;
+  appliedBy?: string | null;
+}
+
+export type CodingApprovalPayload = CodingPlanApprovalPayload | CodingFileChangeApprovalPayload;
+
+export interface CodingProviderProfile {
+  id: CodingProvider;
+  label: string;
+  endpoint: string;
+  usage: string;
+  credits: string;
+  health: CodingProviderHealth;
+  models: string[];
+  enabled: boolean;
+}
+
+export interface CodingKnowledgeFileDTO {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  category: CodingFileCategory;
+  contentPreview: string;
+  createdBy?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+export interface CodingSessionDTO {
+  id: string;
+  title: string;
+  summary: string;
+  input: string;
+  output: string;
+  status: CodingSessionStatus;
+  agents: CodingAgentId[];
+  selectedActions: string[];
+  workspaceState: CodingWorkspaceState | null;
+  createdBy?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+
+export interface CodingApprovalDTO {
+  id: string;
+  title: string;
+  summary: string;
+  payload: CodingApprovalPayload | null;
+  status: CodingApprovalStatus;
+  requestedBy?: string | null;
+  reviewedBy?: string | null;
+  reviewedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

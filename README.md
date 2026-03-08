@@ -82,6 +82,7 @@ pnpm dev
 - `GET /api/coding/bootstrap`: Loads Coding files, sessions, and approval queue
 - `POST /api/coding/files`: Uploads a knowledge file and stores metadata in SQLite
 - `POST /api/coding/file-changes`: Generates a backend diff preview for a workspace file and can create a file-change approval
+- `GET|POST /api/coding/file-changes/history`: Reads file-change history and performs rollback for applied diffs
 - `GET /api/coding/sessions`: Reads persisted Coding sessions
 - `POST /api/coding/snapshots`: Saves a Coding snapshot to the backend
 - `GET|POST|PATCH /api/coding/approvals`: Manages approval-first change requests
@@ -92,7 +93,28 @@ pnpm dev
 - proposed file content draft
 - backend-generated diff preview
 - approval queue with approve / reject flow
-- no automatic file mutation in this step; the system stays approval-first
+- approved changes can now be applied when `HERMES_ALLOW_WORKSPACE_WRITE=true`
+- rollback and diff history are available for applied coding file changes
+
+## Live Mail Workspace
+
+- `GET /api/mail/bootstrap`: Loads live folders, threads, accounts, and sync timestamp
+- `GET|POST /api/mail/folders`: Lists folders and creates new custom mail folders
+- `GET|PATCH /api/mail/threads`: Lists threads and runs thread actions like archive, trash, star, and move
+- `POST /api/mail/compose`: Sends a new message into the live mail workspace
+
+The `Mail` page now supports:
+
+- live folders from SQLite-backed backend state
+- creating custom folders directly in the UI
+- moving, archiving, trashing, and starring threads
+- live composer send flow
+
+## GitHub Control Page
+
+- New `GitHub` page directly above `Coding` in the menu
+- Quick links for repo, issues, pull requests, and actions
+- Ready-state overview for coding, mail, review, and deployment workflows
 
 Optional backend storage directory:
 

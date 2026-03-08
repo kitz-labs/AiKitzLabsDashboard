@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireApiUser } from '@/lib/api-auth';
-import { listCodingApprovals, listCodingKnowledgeFiles, listCodingSessions } from '@/lib/coding';
+import { getCodingProviderProfiles, listCodingApprovals, listCodingKnowledgeFiles, listCodingSessions } from '@/lib/coding';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,5 +12,6 @@ export async function GET(request: Request) {
     files: listCodingKnowledgeFiles(),
     sessions: listCodingSessions(),
     approvals: listCodingApprovals(),
+    providers: getCodingProviderProfiles(),
   });
 }

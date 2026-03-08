@@ -7,7 +7,7 @@ import {
   Gauge, Bot, Mail, Contact, MoreHorizontal,
   PenLine, MessageCircle, Zap, FlaskConical, Search,
   BarChart3, LineChart, BrainCircuit, Rocket, Clock, List, Settings,
-  FolderOpen, Box, Wallet, Code2,
+  FolderOpen, Box, Wallet, Code2, Github,
 } from 'lucide-react';
 import { useSmartPoll } from '@/hooks/use-smart-poll';
 import { useDashboard } from '@/store';
@@ -67,6 +67,7 @@ const getNavGroups = (language: 'en' | 'de'): NavGroup[] => [
       { href: '/deploy', label: t(language, 'navDeploy'), icon: Rocket },
       { href: '/cron', label: t(language, 'navCron'), icon: Clock },
       { href: '/activity', label: t(language, 'navActivity'), icon: List },
+      { href: '/github', label: t(language, 'navGithub'), icon: Github },
       { href: '/coding', label: t(language, 'navCoding'), icon: Code2 },
       { href: '/settings', label: t(language, 'navSettings'), icon: Settings },
     ],

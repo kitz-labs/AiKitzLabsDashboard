@@ -1,6 +1,7 @@
 'use client';
 
 import { MessageCircle, PhoneCall, Users, Bot, Zap, CheckCircle2 } from 'lucide-react';
+import { WhatsappIcon } from '@/components/ui/platform-icons';
 import { useDashboard } from '@/store';
 import { t } from '@/lib/i18n';
 
@@ -11,7 +12,7 @@ export default function WhatsappPage() {
     <div className="space-y-6 animate-in">
       <div className="panel">
         <div className="panel-header">
-          <h1 className="text-xl font-semibold">{t(language, 'titleWhatsapp')}</h1>
+          <h1 className="text-xl font-semibold flex items-center gap-2"><WhatsappIcon className="text-[#25D366]" /> {t(language, 'titleWhatsapp')}</h1>
           <p className="text-sm text-muted-foreground">{t(language, 'whatsappSubtitle')}</p>
         </div>
       </div>
