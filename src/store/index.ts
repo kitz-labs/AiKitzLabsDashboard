@@ -50,6 +50,17 @@ interface CodingApproval {
   status: 'pending' | 'approved' | 'rejected';
   createdAt: string;
   updatedAt: string;
+  payload?: Record<string, unknown> | null;
+}
+
+interface CodingFileChangeDraft {
+  filePath: string;
+  title: string;
+  summary: string;
+  proposedContent: string;
+  diffPreview: string;
+  currentContent: string;
+  selectedApprovalId: string | null;
 }
 
 interface CodingState {
@@ -77,6 +88,7 @@ interface CodingState {
   dailyLearning: boolean;
   selectedActionItems: string[];
   suggestionsVersion: number;
+  fileChangeDraft: CodingFileChangeDraft;
 }
 
 interface DashboardState {
@@ -213,6 +225,15 @@ export const useDashboard = create<DashboardState>()(persist((set, get) => ({
     dailyLearning: true,
     selectedActionItems: [],
     suggestionsVersion: 0,
+    fileChangeDraft: {
+      filePath: 'src/app/coding/page.tsx',
+      title: 'Improve Coding workspace UX',
+      summary: 'Prepare a reviewed file change before applying app modifications.',
+      proposedContent: '',
+      diffPreview: '',
+      currentContent: '',
+      selectedApprovalId: null,
+    },
   },
 
   setOverview: (data) => set({ overview: data }),

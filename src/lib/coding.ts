@@ -77,6 +77,91 @@ export function buildContentPreview(content: string): string {
   return content.replace(/\s+/g, ' ').trim().slice(0, 700);
 }
 
+function isAllowedTextFile(filePath: string): boolean {
+  return /\.(ts|tsx|js|jsx|json|md|txt|css|scss|mjs|cjs|html|yml|yaml|sql)$/i.test(filePath);
+}
+
+export function resolveWorkspacePath(inputPath: string): string {
+  const relative = inputPath.trim().replace(/^\/+/, '');
+  if (!relative) throw new Error('filePath is required');
+  const workspaceRoot = process.cwd();
+  const resolved = path.resolve(workspaceRoot, relative);
+  if (resolved !== workspaceRoot && !resolved.startsWith(`${workspaceRoot}${path.sep}`)) {
+    throw new Error('Path must stay within the workspace');
+  }
+  if (!isAllowedTextFile(resolved)) {
+    throw new Error('Only text-like workspace files are allowed for diff preview');
+  }
+  return resolved;
+}
+
+export function readWorkspaceTextFile(inputPath: string): { exists: boolean; content: string; resolvedPath: string } {
+  const resolvedPath = resolveWorkspacePath(inputPath);
+  if (!fs.existsSync(resolvedPath)) {
+    return { exists: false, content: '', resolvedPath };
+  }
+  const content = fs.readFileSync(resolvedPath, 'utf8');
+  if (content.includes('\u0000')) {
+    throw new Error('Binary files are not supported for diff preview');
+  }
+  return { exists: true, content, resolvedPath };
+}
+
+function buildLcsTable(beforeLines: string[], afterLines: string[]) {
+  const table = Array.from({ length: beforeLines.length + 1 }, () => Array(afterLines.length + 1).fill(0));
+  for (let beforeIndex = beforeLines.length - 1; beforeIndex >= 0; beforeIndex -= 1) {
+    for (let afterIndex = afterLines.length - 1; afterIndex >= 0; afterIndex -= 1) {
+      table[beforeIndex][afterIndex] = beforeLines[beforeIndex] === afterLines[afterIndex]
+        ? table[beforeIndex + 1][afterIndex + 1] + 1
+        : Math.max(table[beforeIndex + 1][afterIndex], table[beforeIndex][afterIndex + 1]);
+    }
+  }
+  return table;
+}
+
+export function createUnifiedDiff(filePath: string, before: string, after: string): string {
+  const beforeLines = before.split(/\r?\n/);
+  const afterLines = after.split(/\r?\n/);
+  const lcs = buildLcsTable(beforeLines, afterLines);
+  const diffLines: string[] = [`--- a/${filePath}`, `+++ b/${filePath}`, '@@'];
+
+  let beforeIndex = 0;
+  let afterIndex = 0;
+  let emitted = 0;
+
+  while (beforeIndex < beforeLines.length && afterIndex < afterLines.length) {
+    if (beforeLines[beforeIndex] === afterLines[afterIndex]) {
+      diffLines.push(` ${beforeLines[beforeIndex]}`);
+      beforeIndex += 1;
+      afterIndex += 1;
+    } else if (lcs[beforeIndex + 1][afterIndex] >= lcs[beforeIndex][afterIndex + 1]) {
+      diffLines.push(`-${beforeLines[beforeIndex]}`);
+      beforeIndex += 1;
+    } else {
+      diffLines.push(`+${afterLines[afterIndex]}`);
+      afterIndex += 1;
+    }
+
+    emitted += 1;
+    if (emitted > 500) {
+      diffLines.push('... diff truncated ...');
+      return diffLines.join('\n');
+    }
+  }
+
+  while (beforeIndex < beforeLines.length) {
+    diffLines.push(`-${beforeLines[beforeIndex]}`);
+    beforeIndex += 1;
+  }
+
+  while (afterIndex < afterLines.length) {
+    diffLines.push(`+${afterLines[afterIndex]}`);
+    afterIndex += 1;
+  }
+
+  return diffLines.join('\n');
+}
+
 export function listCodingKnowledgeFiles(): CodingKnowledgeFileRecord[] {
   const db = getDb();
   const rows = db.prepare(`

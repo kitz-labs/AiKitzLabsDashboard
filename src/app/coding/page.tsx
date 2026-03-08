@@ -116,8 +116,8 @@ export default function CodingPage() {
     promptDraft,
     selectedActionItems,
     sessions,
-    knowledgeFiles,
     approvals,
+    fileChangeDraft,
   } = coding;
 
   const persistSnapshot = useCallback(async (summary?: string) => {
@@ -183,8 +183,9 @@ export default function CodingPage() {
         const response = await fetch('/api/coding/bootstrap', { cache: 'no-store' });
         const data = await response.json();
         if (!active) return;
-        updateCoding({
-          knowledgeFiles: Array.isArray(data.files) ? data.files.map((file: { contentPreview?: string; storagePath?: string; createdBy?: string; updatedAt?: string; createdAt?: string; type?: string; category: string; id: string; name: string; size: number }) => ({
+        const patch: Partial<typeof coding> = {};
+        if (Array.isArray(data.files)) {
+          patch.knowledgeFiles = data.files.map((file: { contentPreview?: string; updatedAt?: string; createdAt?: string; type?: string; category: string; id: string; name: string; size: number }) => ({
             id: file.id,
             name: file.name,
             type: file.type || 'application/octet-stream',
@@ -192,8 +193,10 @@ export default function CodingPage() {
             category: file.category as 'docs' | 'flows' | 'core' | 'memory' | 'uploads',
             contentPreview: file.contentPreview || '',
             addedAt: file.createdAt || file.updatedAt || new Date().toISOString(),
-          })) : knowledgeFiles,
-          sessions: Array.isArray(data.sessions) ? data.sessions.map((session: { id: string; title: string; summary?: string; input?: string; output?: string; status: 'active' | 'saved' | 'archived'; agents?: string[]; updatedAt?: string; createdAt?: string }) => ({
+          }));
+        }
+        if (Array.isArray(data.sessions)) {
+          patch.sessions = data.sessions.map((session: { id: string; title: string; summary?: string; input?: string; output?: string; status: 'active' | 'saved' | 'archived'; agents?: string[]; updatedAt?: string; createdAt?: string }) => ({
             id: session.id,
             title: session.title,
             summary: session.summary || '',
@@ -202,16 +205,20 @@ export default function CodingPage() {
             status: session.status,
             agents: (session.agents || []) as typeof enabledAgents,
             updatedAt: session.updatedAt || session.createdAt || new Date().toISOString(),
-          })) : sessions,
-          approvals: Array.isArray(data.approvals) ? data.approvals.map((approval: { id: string; title: string; summary?: string; status: 'pending' | 'approved' | 'rejected'; createdAt?: string; updatedAt?: string }) => ({
+          }));
+        }
+        if (Array.isArray(data.approvals)) {
+          patch.approvals = data.approvals.map((approval: { id: string; title: string; summary?: string; status: 'pending' | 'approved' | 'rejected'; createdAt?: string; updatedAt?: string; payload?: Record<string, unknown> | null }) => ({
             id: approval.id,
             title: approval.title,
             summary: approval.summary || '',
             status: approval.status,
             createdAt: approval.createdAt || approval.updatedAt || new Date().toISOString(),
             updatedAt: approval.updatedAt || approval.createdAt || new Date().toISOString(),
-          })) : approvals,
-        });
+            payload: approval.payload || null,
+          }));
+        }
+        updateCoding(patch);
       } catch {
         // noop
       } finally {
@@ -224,7 +231,7 @@ export default function CodingPage() {
     return () => {
       active = false;
     };
-  }, [approvals, enabledAgents, knowledgeFiles, sessions, updateCoding]);
+  }, [enabledAgents, updateCoding]);
 
   const sectionButtons = useMemo(() => ([
     { key: 'agent', label: t(language, 'codingAgent'), icon: Bot },
@@ -260,6 +267,17 @@ export default function CodingPage() {
     ACTION_SUGGESTION_SETS[coding.suggestionsVersion % ACTION_SUGGESTION_SETS.length]
       .map((key) => ({ key, label: t(language, key) }))
   ), [coding.suggestionsVersion, language]);
+
+  const fileChangeApprovals = useMemo(
+    () => approvals.filter((approval) => approval.payload && approval.payload.type === 'file-change'),
+    [approvals],
+  );
+
+  const selectedFileApproval = useMemo(
+    () => fileChangeApprovals.find((approval) => approval.id === fileChangeDraft.selectedApprovalId) || null,
+    [fileChangeApprovals, fileChangeDraft.selectedApprovalId],
+  );
+  const selectedFileApprovalPayload = (selectedFileApproval?.payload || null) as Record<string, unknown> | null;
 
   const lastSavedLabel = coding.lastSavedAt ? timeAgo(coding.lastSavedAt) : '—';
 
@@ -357,6 +375,96 @@ export default function CodingPage() {
     updateCoding({
       suggestionsVersion: coding.suggestionsVersion + 1,
       selectedActionItems: [],
+    });
+  }
+
+  async function previewFileChange(createApproval = false) {
+    if (!fileChangeDraft.filePath.trim() || !fileChangeDraft.proposedContent.trim()) return;
+    setBusy(createApproval ? 'file-approval' : 'diff-preview');
+    try {
+      const response = await fetch('/api/coding/file-changes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          filePath: fileChangeDraft.filePath,
+          title: fileChangeDraft.title,
+          summary: fileChangeDraft.summary,
+          proposedContent: fileChangeDraft.proposedContent,
+          createApproval,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Failed to generate diff preview');
+
+      const patch: Partial<typeof coding> = {
+        fileChangeDraft: {
+          ...fileChangeDraft,
+          diffPreview: data.preview.diffPreview,
+          currentContent: data.preview.currentContent,
+          selectedApprovalId: data.approval?.id || fileChangeDraft.selectedApprovalId,
+        },
+      };
+
+      if (data.approval) {
+        patch.approvals = [
+          {
+            id: data.approval.id,
+            title: data.approval.title,
+            summary: data.approval.summary || '',
+            status: data.approval.status,
+            createdAt: data.approval.createdAt || new Date().toISOString(),
+            updatedAt: data.approval.updatedAt || new Date().toISOString(),
+            payload: data.approval.payload || {
+              type: 'file-change',
+              filePath: data.preview.filePath,
+              diffPreview: data.preview.diffPreview,
+            },
+          },
+          ...approvals.filter((item) => item.id !== data.approval.id),
+        ];
+      }
+
+      updateCoding(patch);
+    } catch {
+      // noop for now
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function updateApprovalStatus(approvalId: string, status: 'approved' | 'rejected') {
+    setBusy(`approval-${status}-${approvalId}`);
+    try {
+      const response = await fetch('/api/coding/approvals', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: approvalId, status }),
+      });
+      if (!response.ok) return;
+      updateCoding({
+        approvals: approvals.map((approval) => (
+          approval.id === approvalId ? { ...approval, status, updatedAt: new Date().toISOString() } : approval
+        )),
+      });
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  function selectFileApproval(approvalId: string) {
+    const approval = fileChangeApprovals.find((item) => item.id === approvalId);
+    const payload = approval?.payload as Record<string, string> | null | undefined;
+    updateCoding({
+      fileChangeDraft: {
+        ...fileChangeDraft,
+        selectedApprovalId: approvalId,
+        filePath: payload?.filePath || fileChangeDraft.filePath,
+        title: approval?.title || fileChangeDraft.title,
+        summary: approval?.summary || fileChangeDraft.summary,
+        proposedContent: payload?.proposedContent || fileChangeDraft.proposedContent,
+        currentContent: payload?.currentContent || fileChangeDraft.currentContent,
+        diffPreview: payload?.diffPreview || fileChangeDraft.diffPreview,
+      },
     });
   }
 
@@ -687,7 +795,7 @@ export default function CodingPage() {
         {coding.approvals.length > 0 && (
           <div className="space-y-2 border-t border-border/40 pt-3">
             <div className="text-xs text-muted-foreground">{t(language, 'codingApprovalQueue')}</div>
-            {coding.approvals.slice(0, 3).map((approval) => (
+            {coding.approvals.slice(0, 6).map((approval) => (
               <div key={approval.id} className="rounded-xl border border-border/40 p-3 bg-muted/10">
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -698,6 +806,19 @@ export default function CodingPage() {
                     {approval.status}
                   </span>
                 </div>
+                {approval.payload && approval.payload.type === 'file-change' && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    <button className="btn btn-ghost btn-xs" onClick={() => selectFileApproval(approval.id)}>
+                      <Code2 size={12} /> {t(language, 'codingOpenDiff')}
+                    </button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => void updateApprovalStatus(approval.id, 'approved')} disabled={approval.status !== 'pending' || busy === `approval-approved-${approval.id}`}>
+                      <Check size={12} /> {t(language, 'codingApprove')}
+                    </button>
+                    <button className="btn btn-ghost btn-xs" onClick={() => void updateApprovalStatus(approval.id, 'rejected')} disabled={approval.status !== 'pending' || busy === `approval-rejected-${approval.id}`}>
+                      <Trash2 size={12} /> {t(language, 'codingReject')}
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -869,6 +990,84 @@ export default function CodingPage() {
                 <div className="text-xs text-muted-foreground">
                   {t(language, 'codingSelectedSuggestions')}: {coding.selectedActionItems.length}
                 </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[0.9fr_1.1fr] gap-4">
+              <div className="rounded-xl border border-border/40 bg-background/80 p-4 space-y-3">
+                <div>
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    <Code2 size={15} className="text-primary" /> {t(language, 'codingFileChangeTitle')}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">{t(language, 'codingFileChangeSubtitle')}</p>
+                </div>
+                <label className="space-y-2 block">
+                  <span className="text-xs text-muted-foreground">{t(language, 'codingFilePath')}</span>
+                  <input
+                    value={fileChangeDraft.filePath}
+                    onChange={(event) => updateCoding({ fileChangeDraft: { ...fileChangeDraft, filePath: event.target.value } })}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                    placeholder="src/app/coding/page.tsx"
+                  />
+                </label>
+                <label className="space-y-2 block">
+                  <span className="text-xs text-muted-foreground">{t(language, 'codingChangeTitle')}</span>
+                  <input
+                    value={fileChangeDraft.title}
+                    onChange={(event) => updateCoding({ fileChangeDraft: { ...fileChangeDraft, title: event.target.value } })}
+                    className="w-full px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  />
+                </label>
+                <label className="space-y-2 block">
+                  <span className="text-xs text-muted-foreground">{t(language, 'codingChangeSummary')}</span>
+                  <textarea
+                    value={fileChangeDraft.summary}
+                    onChange={(event) => updateCoding({ fileChangeDraft: { ...fileChangeDraft, summary: event.target.value } })}
+                    className="w-full min-h-[80px] px-3 py-2 rounded-lg border border-border bg-background text-sm"
+                  />
+                </label>
+                <label className="space-y-2 block">
+                  <span className="text-xs text-muted-foreground">{t(language, 'codingProposedContent')}</span>
+                  <textarea
+                    value={fileChangeDraft.proposedContent}
+                    onChange={(event) => updateCoding({ fileChangeDraft: { ...fileChangeDraft, proposedContent: event.target.value } })}
+                    className="w-full min-h-[220px] px-3 py-2 rounded-lg border border-border bg-background font-mono text-xs"
+                    placeholder={t(language, 'codingProposedContentPlaceholder')}
+                  />
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button className="btn btn-ghost btn-sm" onClick={() => void previewFileChange(false)} disabled={!fileChangeDraft.filePath.trim() || !fileChangeDraft.proposedContent.trim() || busy === 'diff-preview'}>
+                    {busy === 'diff-preview' ? <LoaderCircle size={14} className="animate-spin" /> : <Search size={14} />} {t(language, 'codingGenerateDiff')}
+                  </button>
+                  <button className="btn btn-primary btn-sm" onClick={() => void previewFileChange(true)} disabled={!fileChangeDraft.filePath.trim() || !fileChangeDraft.proposedContent.trim() || busy === 'file-approval'}>
+                    {busy === 'file-approval' ? <LoaderCircle size={14} className="animate-spin" /> : <ShieldCheck size={14} />} {t(language, 'codingCreateFileApproval')}
+                  </button>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-border/40 bg-background/80 p-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium flex items-center gap-2">
+                      <GitBranch size={15} className="text-primary" /> {t(language, 'codingDiffPreview')}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {selectedFileApproval ? `${t(language, 'codingSelectedApproval')}: ${selectedFileApproval.title}` : t(language, 'codingCurrentDraft')}
+                    </div>
+                  </div>
+                  {selectedFileApproval && (
+                    <button className="btn btn-ghost btn-xs" onClick={() => updateCoding({ fileChangeDraft: { ...fileChangeDraft, selectedApprovalId: null } })}>
+                      {t(language, 'codingBackToDraft')}
+                    </button>
+                  )}
+                </div>
+                <div className="rounded-lg border border-border/40 p-3 bg-muted/10 text-xs text-muted-foreground">
+                  <div>{t(language, 'codingFilePath')}: {typeof selectedFileApprovalPayload?.filePath === 'string' ? selectedFileApprovalPayload.filePath : fileChangeDraft.filePath || '—'}</div>
+                  <div className="mt-1">{t(language, 'codingDiffStatus')}: {selectedFileApprovalPayload?.exists === false ? t(language, 'codingDiffNewFile') : t(language, 'codingDiffExistingFile')}</div>
+                </div>
+                <pre className="min-h-[320px] max-h-[460px] overflow-auto rounded-xl border border-border/40 bg-[#07101f] p-4 text-[11px] leading-5 text-slate-200 whitespace-pre-wrap">
+{(typeof selectedFileApprovalPayload?.diffPreview === 'string' ? selectedFileApprovalPayload.diffPreview : fileChangeDraft.diffPreview || t(language, 'codingNoDiffYet'))}
+                </pre>
               </div>
             </div>
           </div>

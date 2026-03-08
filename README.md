@@ -81,9 +81,18 @@ pnpm dev
 
 - `GET /api/coding/bootstrap`: Loads Coding files, sessions, and approval queue
 - `POST /api/coding/files`: Uploads a knowledge file and stores metadata in SQLite
+- `POST /api/coding/file-changes`: Generates a backend diff preview for a workspace file and can create a file-change approval
 - `GET /api/coding/sessions`: Reads persisted Coding sessions
 - `POST /api/coding/snapshots`: Saves a Coding snapshot to the backend
 - `GET|POST|PATCH /api/coding/approvals`: Manages approval-first change requests
+
+### File-Change Approvals
+
+- reviewed file path input
+- proposed file content draft
+- backend-generated diff preview
+- approval queue with approve / reject flow
+- no automatic file mutation in this step; the system stays approval-first
 
 Optional backend storage directory:
 
